@@ -91,7 +91,45 @@ This is a full-stack application that allows VATSIM controllers to book ATC posi
 - ✅ Input validation and sanitization
 - ✅ SQL injection protection via Prisma
 
-## Quick Start
+## 🚀 Quick Start with Sample Data
+
+Get up and running in 5 minutes with realistic sample data!
+
+### Prerequisites
+- Node.js 20+
+- MySQL 8.0+ (or use Docker)
+
+### Super Quick Setup (Automated)
+
+```bash
+# 1. Clone and navigate to backend
+cd backend
+
+# 2. Run automated setup script
+./setup-dev.sh
+
+# 3. Start backend (in one terminal)
+npm run dev
+
+# 4. Start frontend (in another terminal)
+cd ../frontend
+npm install
+npm run dev
+
+# 5. Open http://localhost:5173
+```
+
+**That's it!** Your system now has:
+- ✅ 10 sample controllers with API keys
+- ✅ 4 active bookings happening RIGHT NOW
+- ✅ 10+ upcoming bookings
+- ✅ 8 completed bookings
+
+See [SAMPLE-DATA.md](SAMPLE-DATA.md) for details on the sample data.
+
+---
+
+## Production Deployment
 
 ### Prerequisites
 - Docker & Docker Compose
