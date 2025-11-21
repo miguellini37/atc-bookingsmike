@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, optionalAuth, requireSecretKey } from '../middleware/auth';
 import * as bookingController from '../controllers/bookingController';
 import * as apiKeyController from '../controllers/apiKeyController';
+import * as seedController from '../controllers/seedController';
 
 const router = Router();
 
@@ -30,5 +31,11 @@ router.post('/keys', requireSecretKey, apiKeyController.createApiKey);
 router.get('/keys/:id', requireSecretKey, apiKeyController.getApiKeyById);
 router.put('/keys/:id', requireSecretKey, apiKeyController.updateApiKey);
 router.delete('/keys/:id', requireSecretKey, apiKeyController.deleteApiKey);
+
+/**
+ * Admin routes
+ * Seed database with sample data (requires secret key)
+ */
+router.post('/admin/seed', seedController.seedDatabase);
 
 export default router;
