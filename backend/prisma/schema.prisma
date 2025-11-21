@@ -1,0 +1,58 @@
+// Prisma schema for ATC Bookings
+// Database: MySQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model ApiKey {
+  id          Int       @id @default(autoincrement())
+  cid         String    @db.VarChar(255)
+  name        String    @db.VarChar(255)
+  key         String    @unique @db.VarChar(255)
+  division    String    @db.VarChar(255)
+  subdivision String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  bookings    Booking[]
+
+  @@map("api_keys")
+  @@index([key])
+}
+
+enum BookingType {
+  booking
+  event
+  exam
+  training
+}
+
+model Booking {
+  id          Int          @id @default(autoincrement())
+  apiKeyId    Int          @map("api_key_id")
+  cid         String       @db.VarChar(255)
+  callsign    String       @db.VarChar(255)
+  type        BookingType  @default(booking)
+  start       DateTime
+  end         DateTime
+  division    String       @db.VarChar(255)
+  subdivision String?      @db.VarChar(255)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relationships
+  apiKey      ApiKey       @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@map("bookings")
+  @@index([apiKeyId])
+  @@index([start])
+  @@index([end])
+  @@index([callsign])
+}
