@@ -64,7 +64,7 @@ export const authenticateSecretKey = async (
  * Logout and clear secret key cookie
  * POST /api/auth/logout
  */
-export const logout = async (req: AuthenticatedRequest, res: Response): Promise<Response> => {
+export const logout = async (_req: AuthenticatedRequest, res: Response): Promise<Response> => {
   res.clearCookie('secret_key');
   return sendSuccess(res, { loggedOut: true });
 };
@@ -74,7 +74,7 @@ export const logout = async (req: AuthenticatedRequest, res: Response): Promise<
  * GET /api/keys
  */
 export const getApiKeys = async (
-  req: AuthenticatedRequest,
+  _req: AuthenticatedRequest,
   res: Response
 ): Promise<Response> => {
   try {

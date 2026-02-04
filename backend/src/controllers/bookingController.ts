@@ -64,10 +64,10 @@ export const getBookings = async (
 
     // Date range filtering
     if (filters.startDate) {
-      where.start = { ...where.start, gte: new Date(filters.startDate) };
+      where.start = { ...(where.start as object), gte: new Date(filters.startDate) };
     }
     if (filters.endDate) {
-      where.end = { ...where.end, lte: new Date(filters.endDate) };
+      where.end = { ...(where.end as object), lte: new Date(filters.endDate) };
     }
 
     const bookings = await prisma.booking.findMany({

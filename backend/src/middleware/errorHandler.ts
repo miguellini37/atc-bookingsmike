@@ -7,10 +7,10 @@ import { sendServerError, sendBadRequest } from '../utils/responses';
  */
 export const errorHandler = (
   error: Error,
-  req: Request,
+  _req: Request,
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   console.error('Error:', error);
 
