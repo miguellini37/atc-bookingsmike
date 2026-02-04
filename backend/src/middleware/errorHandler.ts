@@ -12,13 +12,11 @@ export const errorHandler = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction
 ): void => {
-  console.error('Error:', error);
-
-  // Log to Sentry in production
-  if (process.env.SENTRY_DSN && process.env.NODE_ENV === 'production') {
-    // TODO: Integrate Sentry SDK
-    console.error('Sentry logging would happen here:', error);
-  }
+  // Always log full error details for debugging
+  console.error('=== ERROR DETAILS ===');
+  console.error('Name:', error.name);
+  console.error('Message:', error.message);
+  console.error('Stack:', error.stack);
 
   // Handle specific error types
   if (error.name === 'ValidationError') {
@@ -26,8 +24,17 @@ export const errorHandler = (
     return;
   }
 
+  // Handle Prisma connection errors
+  if (error.message?.includes('prisma') || error.message?.includes('database')) {
+    console.error('Database connection error detected');
+  }
+
   // Default to 500 Internal Server Error
-  sendServerError(res, process.env.NODE_ENV === 'development' ? error.message : undefined);
+  // In production, include error name to help debugging
+  const message = process.env.NODE_ENV === 'development'
+    ? error.message
+    : `Internal server error: ${error.name}`;
+  sendServerError(res, message);
 };
 
 /**

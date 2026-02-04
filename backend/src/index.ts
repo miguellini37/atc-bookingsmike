@@ -84,10 +84,20 @@ app.use(errorHandler);
 /**
  * Start server
  */
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 CORS enabled for: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
+
+  // Check database connection on startup
+  try {
+    const { prisma } = await import('./utils/database');
+    await prisma.$connect();
+    console.log('✅ Database connected successfully');
+  } catch (err) {
+    console.error('❌ Database connection failed:', err);
+    console.error('DATABASE_URL format check:', process.env.DATABASE_URL?.substring(0, 30) + '...');
+  }
 });
 
 /**

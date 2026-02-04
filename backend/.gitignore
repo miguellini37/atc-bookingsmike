@@ -36,5 +36,5 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# Prisma
-prisma/migrations/
+# Prisma - migrations MUST be committed for deploy to work
+# prisma/migrations/ - DO NOT IGNORE
