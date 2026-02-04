@@ -1,113 +1,157 @@
-import { useState, useEffect } from 'react';
+import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { formatDistanceToNow, format, isPast, isFuture, isWithinInterval } from 'date-fns';
-import { bookingsApi } from '../lib/api';
-import type { Booking, BookingType } from '../types';
-
-const getBookingColor = (type: BookingType): string => {
-  switch (type) {
-    case 'event':
-      return 'bg-red-500';
-    case 'exam':
-      return 'bg-orange-500';
-    case 'training':
-      return 'bg-purple-500';
-    default:
-      return 'bg-blue-500';
-  }
-};
-
-const getBookingBadge = (type: BookingType): string => {
-  switch (type) {
-    case 'event':
-      return 'bg-red-100 text-red-800 border-red-300';
-    case 'exam':
-      return 'bg-orange-100 text-orange-800 border-orange-300';
-    case 'training':
-      return 'bg-purple-100 text-purple-800 border-purple-300';
-    default:
-      return 'bg-blue-100 text-blue-800 border-blue-300';
-  }
-};
-
-const getStatusInfo = (start: Date, end: Date) => {
-  const now = new Date();
-
-  if (isWithinInterval(now, { start, end })) {
-    return {
-      status: 'ACTIVE NOW',
-      color: 'bg-green-500',
-      textColor: 'text-green-700',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-300',
-      message: `Ends ${formatDistanceToNow(end, { addSuffix: true })}`,
-    };
-  } else if (isFuture(start)) {
-    return {
-      status: 'UPCOMING',
-      color: 'bg-blue-500',
-      textColor: 'text-blue-700',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-300',
-      message: `Starts ${formatDistanceToNow(start, { addSuffix: true })}`,
-    };
-  } else {
-    return {
-      status: 'COMPLETED',
-      color: 'bg-gray-500',
-      textColor: 'text-gray-700',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-300',
-      message: `Ended ${formatDistanceToNow(end, { addSuffix: true })}`,
-    };
-  }
-};
+import {
+  isPast,
+  isFuture,
+  isWithinInterval,
+  startOfDay,
+  endOfDay,
+  addDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+} from 'date-fns';
+import { RefreshCw, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { bookingsApi } from '@/lib/api';
+import { useViewMode } from '@/contexts/ViewModeContext';
+import { getPositionType } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { ViewModeToggle } from '@/components/ViewModeToggle';
+import { FilterBar, defaultFilters, type FilterState } from '@/components/FilterBar';
+import { QuickFilters } from '@/components/QuickFilters';
+import { TimelineView } from '@/components/views/TimelineView';
+import { ListView } from '@/components/views/ListView';
+import { BookingCardGrid } from '@/components/BookingCard';
+import { BookingCardSkeletonGrid } from '@/components/skeletons/BookingCardSkeleton';
+import { TimelineSkeleton } from '@/components/skeletons/TimelineRowSkeleton';
 
 function HomePage() {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const { viewMode } = useViewMode();
+  const [filters, setFilters] = React.useState<FilterState>(defaultFilters);
+  const [selectedDate, setSelectedDate] = React.useState(new Date());
 
-  // Update time every 30 seconds for live countdowns
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const { data: allBookings = [], isLoading, error, refetch } = useQuery({
+  const {
+    data: allBookings = [],
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ['bookings'],
     queryFn: () => bookingsApi.getAll(),
     refetchInterval: 60000, // Refresh every minute
   });
 
-  // Categorize bookings
+  // Extract unique divisions for filter dropdown
+  const divisions = React.useMemo(() => {
+    const divisionSet = new Set(allBookings.map((b) => b.division));
+    return Array.from(divisionSet).sort();
+  }, [allBookings]);
+
+  // Apply filters to bookings
+  const filteredBookings = React.useMemo(() => {
+    let result = [...allBookings];
+
+    // Search filter
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      result = result.filter(
+        (b) =>
+          b.callsign.toLowerCase().includes(searchLower) ||
+          b.apiKey?.name?.toLowerCase().includes(searchLower) ||
+          b.cid.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Position type filter
+    if (filters.positionTypes.length > 0) {
+      result = result.filter((b) => {
+        const posType = getPositionType(b.callsign);
+        return filters.positionTypes.includes(posType);
+      });
+    }
+
+    // Booking type filter
+    if (filters.bookingTypes.length > 0) {
+      result = result.filter((b) => filters.bookingTypes.includes(b.type));
+    }
+
+    // Division filter
+    if (filters.division) {
+      result = result.filter((b) => b.division === filters.division);
+    }
+
+    // Time range filter
+    const now = new Date();
+    if (filters.timeRange !== 'all') {
+      let rangeStart: Date;
+      let rangeEnd: Date;
+
+      switch (filters.timeRange) {
+        case 'today':
+          rangeStart = startOfDay(now);
+          rangeEnd = endOfDay(now);
+          break;
+        case 'week':
+          rangeStart = startOfWeek(now);
+          rangeEnd = endOfWeek(now);
+          break;
+        case 'month':
+          rangeStart = startOfMonth(now);
+          rangeEnd = endOfMonth(now);
+          break;
+        default:
+          rangeStart = new Date(0);
+          rangeEnd = new Date(8640000000000000);
+      }
+
+      result = result.filter((b) => {
+        const start = new Date(b.start);
+        const end = new Date(b.end);
+        return (
+          isWithinInterval(start, { start: rangeStart, end: rangeEnd }) ||
+          isWithinInterval(end, { start: rangeStart, end: rangeEnd }) ||
+          (start <= rangeStart && end >= rangeEnd)
+        );
+      });
+    }
+
+    return result;
+  }, [allBookings, filters]);
+
+  // Categorize bookings for cards view
   const now = new Date();
-  const activeBookings = allBookings.filter((b) =>
+  const activeBookings = filteredBookings.filter((b) =>
     isWithinInterval(now, { start: new Date(b.start), end: new Date(b.end) })
   );
 
-  const upcomingBookings = allBookings
+  const upcomingBookings = filteredBookings
     .filter((b) => isFuture(new Date(b.start)))
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-    .slice(0, 10);
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
-  const recentlyCompleted = allBookings
+  const completedBookings = filteredBookings
     .filter((b) => isPast(new Date(b.end)))
     .sort((a, b) => new Date(b.end).getTime() - new Date(a.end).getTime())
-    .slice(0, 5);
+    .slice(0, 10);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-xl text-gray-600">Loading bookings...</div>
-      </div>
-    );
-  }
+  // Date navigation for timeline view
+  const navigateDate = (direction: 'prev' | 'next') => {
+    setSelectedDate((prev) => addDays(prev, direction === 'next' ? 1 : -1));
+  };
+
+  const goToToday = () => {
+    setSelectedDate(new Date());
+  };
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-xl text-red-600">Error loading bookings. Please try again.</div>
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <div className="text-xl text-destructive">Error loading bookings. Please try again.</div>
+        <Button onClick={() => refetch()} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
       </div>
     );
   }
@@ -115,159 +159,143 @@ function HomePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900">ATC Positions</h1>
-          <p className="text-gray-600 mt-1">
-            Last updated: {format(currentTime, 'HH:mm:ss')}
+          <h1 className="text-3xl font-bold tracking-tight">ATC Bookings</h1>
+          <p className="text-muted-foreground">
+            {filteredBookings.length} booking{filteredBookings.length !== 1 ? 's' : ''} found
+            {activeBookings.length > 0 && (
+              <span className="ml-2 text-green-500 font-medium">
+                ({activeBookings.length} active)
+              </span>
+            )}
           </p>
         </div>
-        <button onClick={() => refetch()} className="btn-primary">
-          Refresh
-        </button>
+
+        <div className="flex items-center gap-3">
+          <ViewModeToggle />
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            disabled={isFetching}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
-      {/* Active Bookings - Most Prominent */}
-      {activeBookings.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold text-green-700 mb-4 flex items-center gap-2">
-            <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-            Active Now ({activeBookings.length})
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {activeBookings.map((booking) => {
-              const status = getStatusInfo(new Date(booking.start), new Date(booking.end));
-              return (
-                <BookingCard key={booking.id} booking={booking} status={status} prominent />
-              );
-            })}
+      {/* Quick Filters */}
+      <QuickFilters filters={filters} onChange={setFilters} />
+
+      {/* Filter Bar */}
+      <FilterBar filters={filters} onChange={setFilters} divisions={divisions} />
+
+      {/* Timeline Date Navigator (only for timeline view) */}
+      {viewMode === 'timeline' && (
+        <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+          <Button variant="ghost" size="sm" onClick={() => navigateDate('prev')}>
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous Day
+          </Button>
+
+          <div className="flex items-center gap-3">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <span className="font-medium">
+              {selectedDate.toLocaleDateString('en-GB', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </span>
+            <Button variant="outline" size="sm" onClick={goToToday}>
+              Today
+            </Button>
           </div>
+
+          <Button variant="ghost" size="sm" onClick={() => navigateDate('next')}>
+            Next Day
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
         </div>
       )}
 
-      {/* Upcoming Bookings */}
-      {upcomingBookings.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold text-blue-700 mb-4">
-            Coming Up Next ({upcomingBookings.length})
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {upcomingBookings.map((booking) => {
-              const status = getStatusInfo(new Date(booking.start), new Date(booking.end));
-              return <BookingCard key={booking.id} booking={booking} status={status} />;
-            })}
-          </div>
-        </div>
+      {/* Content based on view mode */}
+      {isLoading ? (
+        viewMode === 'timeline' ? (
+          <TimelineSkeleton />
+        ) : (
+          <BookingCardSkeletonGrid />
+        )
+      ) : (
+        <>
+          {viewMode === 'timeline' && (
+            <TimelineView bookings={filteredBookings} date={selectedDate} />
+          )}
+
+          {viewMode === 'list' && <ListView bookings={filteredBookings} />}
+
+          {viewMode === 'cards' && (
+            <div className="space-y-8">
+              {/* Active Bookings - Most Prominent */}
+              {activeBookings.length > 0 && (
+                <section>
+                  <h2 className="text-xl font-semibold text-green-500 mb-4 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse-dot" />
+                    Active Now ({activeBookings.length})
+                  </h2>
+                  <BookingCardGrid bookings={activeBookings} />
+                </section>
+              )}
+
+              {/* Upcoming Bookings */}
+              {upcomingBookings.length > 0 && (
+                <section>
+                  <h2 className="text-xl font-semibold mb-4">
+                    Upcoming ({upcomingBookings.length})
+                  </h2>
+                  <BookingCardGrid bookings={upcomingBookings} />
+                </section>
+              )}
+
+              {/* Recently Completed */}
+              {completedBookings.length > 0 && (
+                <section>
+                  <h2 className="text-xl font-semibold text-muted-foreground mb-4">
+                    Recently Completed
+                  </h2>
+                  <BookingCardGrid bookings={completedBookings} />
+                </section>
+              )}
+
+              {/* Empty State */}
+              {filteredBookings.length === 0 && (
+                <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
+                  <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No Bookings Found</h3>
+                  <p className="text-muted-foreground text-center max-w-md">
+                    {allBookings.length === 0
+                      ? 'There are currently no ATC positions booked.'
+                      : 'No bookings match your current filters. Try adjusting your search criteria.'}
+                  </p>
+                  {allBookings.length > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setFilters(defaultFilters)}
+                      className="mt-4"
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
-
-      {/* Recently Completed */}
-      {recentlyCompleted.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold text-gray-600 mb-4">Recently Completed</h2>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {recentlyCompleted.map((booking) => {
-              const status = getStatusInfo(new Date(booking.start), new Date(booking.end));
-              return <BookingCard key={booking.id} booking={booking} status={status} compact />;
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {allBookings.length === 0 && (
-        <div className="card text-center py-16">
-          <div className="text-6xl mb-4">📅</div>
-          <h3 className="text-2xl font-bold text-gray-700 mb-2">No Bookings Found</h3>
-          <p className="text-gray-600">There are currently no ATC positions booked.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface BookingCardProps {
-  booking: Booking;
-  status: ReturnType<typeof getStatusInfo>;
-  prominent?: boolean;
-  compact?: boolean;
-}
-
-function BookingCard({ booking, status, prominent = false, compact = false }: BookingCardProps) {
-  const start = new Date(booking.start);
-  const end = new Date(booking.end);
-
-  return (
-    <div
-      className={`
-        card hover:shadow-xl transition-all duration-200 border-2 animate-slide-in
-        ${status.borderColor}
-        ${prominent ? 'ring-4 ring-green-200 active-glow' : ''}
-        ${compact ? 'p-4' : ''}
-      `}
-    >
-      {/* Status Badge */}
-      <div className="flex items-center justify-between mb-3">
-        <span
-          className={`
-            px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
-            ${status.color} text-white
-            ${prominent ? 'text-sm px-4 py-2' : ''}
-          `}
-        >
-          {status.status}
-        </span>
-        <span className={`px-2 py-1 rounded border text-xs font-medium ${getBookingBadge(booking.type)}`}>
-          {booking.type}
-        </span>
-      </div>
-
-      {/* Position/Callsign - LARGE and Prominent */}
-      <div className="mb-3">
-        <div className={`font-black tracking-tight ${prominent ? 'text-4xl' : compact ? 'text-2xl' : 'text-3xl'} text-gray-900`}>
-          {booking.callsign}
-        </div>
-      </div>
-
-      {/* Controller Name */}
-      <div className="mb-4">
-        <div className={`flex items-center gap-2 ${prominent ? 'text-xl' : compact ? 'text-base' : 'text-lg'}`}>
-          <span className="text-gray-500">👤</span>
-          <span className="font-semibold text-gray-800">
-            {booking.apiKey?.name || 'Unknown Controller'}
-          </span>
-        </div>
-      </div>
-
-      {/* Time Information */}
-      <div className={`space-y-2 ${compact ? 'text-sm' : 'text-base'}`}>
-        <div className="flex items-center gap-2 text-gray-700">
-          <span className="font-medium">🕐</span>
-          <span className="font-mono">{format(start, 'HH:mm')} - {format(end, 'HH:mm')}</span>
-        </div>
-        <div className="flex items-center gap-2 text-gray-700">
-          <span className="font-medium">📅</span>
-          <span>{format(start, 'EEE, MMM d, yyyy')}</span>
-        </div>
-      </div>
-
-      {/* Countdown/Status Message */}
-      <div className={`mt-4 pt-4 border-t-2 ${status.borderColor}`}>
-        <div className={`font-bold ${status.textColor} ${prominent ? 'text-lg' : 'text-base'}`}>
-          {status.message}
-        </div>
-      </div>
-
-      {/* Division/Subdivision Info */}
-      <div className="mt-3 flex gap-2 text-xs">
-        <span className="px-2 py-1 bg-gray-100 rounded text-gray-700 font-medium">
-          {booking.division}
-        </span>
-        {booking.subdivision && (
-          <span className="px-2 py-1 bg-gray-100 rounded text-gray-700 font-medium">
-            {booking.subdivision}
-          </span>
-        )}
-      </div>
     </div>
   );
 }

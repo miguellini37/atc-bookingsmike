@@ -1,82 +1,190 @@
-import { useState } from 'react';
+import * as React from 'react';
 import { format } from 'date-fns';
-import type { ApiKey } from '../types';
+import { toast } from 'sonner';
+import { Copy, Check, MoreHorizontal, Trash2, Eye, EyeOff, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import type { ApiKey } from '@/types';
 
 interface ApiKeyListProps {
   apiKeys: ApiKey[];
-  onDelete: (id: number) => void;
+  onDelete: (apiKey: ApiKey) => void;
   isDeleting?: boolean;
 }
 
 function ApiKeyList({ apiKeys, onDelete, isDeleting }: ApiKeyListProps) {
-  const [copiedKey, setCopiedKey] = useState<number | null>(null);
+  const [copiedKey, setCopiedKey] = React.useState<number | null>(null);
+  const [visibleKeys, setVisibleKeys] = React.useState<Set<number>>(new Set());
 
   const copyToClipboard = async (key: string, id: number) => {
     try {
       await navigator.clipboard.writeText(key);
       setCopiedKey(id);
+      toast.success('API key copied to clipboard');
       setTimeout(() => setCopiedKey(null), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
+    } catch {
+      toast.error('Failed to copy API key');
     }
+  };
+
+  const toggleKeyVisibility = (id: number) => {
+    setVisibleKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const maskKey = (key: string) => {
+    return `${key.slice(0, 8)}${'*'.repeat(24)}${key.slice(-4)}`;
   };
 
   if (apiKeys.length === 0) {
     return (
-      <div className="card text-center py-12 text-gray-500">
-        No API keys found. Create one to get started.
+      <div className="flex flex-col items-center justify-center rounded-md border border-dashed py-12 text-muted-foreground">
+        <Calendar className="h-12 w-12 mb-4 opacity-50" />
+        <p className="text-lg font-medium">No API keys found</p>
+        <p className="text-sm">Create one to get started</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {apiKeys.map((apiKey) => (
-        <div key={apiKey.id} className="card hover:shadow-lg transition-shadow">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-3">
-                <h3 className="text-xl font-semibold text-gray-900">{apiKey.name}</h3>
-                <span className="px-2 py-1 text-xs bg-primary-100 text-primary-800 rounded">
-                  CID: {apiKey.cid}
-                </span>
-              </div>
+    <div className="rounded-md border overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px]">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                Name
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                CID
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                Division
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                API Key
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                Bookings
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                Created
+              </th>
+              <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {apiKeys.map((apiKey) => {
+              const isKeyVisible = visibleKeys.has(apiKey.id);
+              const isCopied = copiedKey === apiKey.id;
 
-              <div className="flex gap-4 text-sm text-gray-600">
-                <span>Division: {apiKey.division}</span>
-                {apiKey.subdivision && <span>Subdivision: {apiKey.subdivision}</span>}
-                {apiKey._count && (
-                  <span className="text-primary-600 font-medium">
-                    {apiKey._count.bookings} booking{apiKey._count.bookings !== 1 ? 's' : ''}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 bg-gray-50 p-3 rounded border border-gray-200">
-                <code className="flex-1 text-sm font-mono break-all">{apiKey.key}</code>
-                <button
-                  onClick={() => copyToClipboard(apiKey.key, apiKey.id)}
-                  className="btn-secondary text-sm px-3 py-1 whitespace-nowrap"
+              return (
+                <tr
+                  key={apiKey.id}
+                  className="border-b transition-colors hover:bg-muted/50"
                 >
-                  {copiedKey === apiKey.id ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-
-              <div className="text-xs text-gray-500">
-                Created: {format(new Date(apiKey.createdAt), 'PPpp')}
-              </div>
-            </div>
-
-            <button
-              onClick={() => onDelete(apiKey.id)}
-              disabled={isDeleting}
-              className="btn-danger ml-4"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      ))}
+                  <td className="p-4 align-middle">
+                    <span className="font-medium">{apiKey.name}</span>
+                  </td>
+                  <td className="p-4 align-middle">
+                    <Badge variant="secondary">{apiKey.cid}</Badge>
+                  </td>
+                  <td className="p-4 align-middle">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">{apiKey.division}</span>
+                      {apiKey.subdivision && (
+                        <span className="text-muted-foreground">/ {apiKey.subdivision}</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 align-middle">
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded max-w-[200px] truncate">
+                        {isKeyVisible ? apiKey.key : maskKey(apiKey.key)}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => toggleKeyVisibility(apiKey.id)}
+                      >
+                        {isKeyVisible ? (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => copyToClipboard(apiKey.key, apiKey.id)}
+                      >
+                        {isCopied ? (
+                          <Check className="h-3.5 w-3.5 text-green-500" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  </td>
+                  <td className="p-4 align-middle">
+                    <Badge variant={apiKey._count?.bookings ? 'default' : 'secondary'}>
+                      {apiKey._count?.bookings || 0}
+                    </Badge>
+                  </td>
+                  <td className="p-4 align-middle text-sm text-muted-foreground">
+                    {format(new Date(apiKey.createdAt), 'dd MMM yyyy')}
+                  </td>
+                  <td className="p-4 align-middle text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => copyToClipboard(apiKey.key, apiKey.id)}>
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copy API Key
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => onDelete(apiKey)}
+                          disabled={isDeleting}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Key
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

@@ -121,6 +121,44 @@ This is a full-stack application that allows VATSIM controllers to book ATC posi
    - Backend API: http://localhost:3000
    - Health check: http://localhost:3000/health
 
+### Railway Deployment (Recommended)
+
+Railway provides the easiest deployment experience with automatic builds and managed MySQL.
+
+1. **Create Railway Account**
+   - Sign up at [railway.app](https://railway.app)
+
+2. **Create New Project**
+   - Click "New Project" > "Deploy from GitHub repo"
+   - Connect your GitHub account and select this repository
+
+3. **Add MySQL Database**
+   - In your project, click "New" > "Database" > "MySQL"
+   - Railway automatically creates `DATABASE_URL` environment variable
+
+4. **Configure Environment Variables**
+   - Go to your service settings > Variables
+   - Add the following:
+     ```
+     NODE_ENV=production
+     SECRET_KEY=<generate-a-secure-random-string>
+     ```
+
+5. **Deploy**
+   - Railway automatically detects the config and deploys
+   - First deployment runs database migrations automatically
+
+6. **Access Your App**
+   - Click on your service to see the deployment URL
+   - Your app will be at: `https://your-project.up.railway.app`
+
+**Railway Features Used:**
+- Automatic builds with Nixpacks
+- Managed MySQL database
+- Automatic HTTPS
+- Health checks at `/health`
+- Automatic restarts on failure
+
 ### Local Development
 
 #### Backend Development

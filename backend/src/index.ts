@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import path from 'path';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { disconnectDatabase } from './utils/database';
@@ -15,14 +16,22 @@ dotenv.config();
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
 
 /**
  * Middleware setup
  */
-app.use(helmet()); // Security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: isProduction ? undefined : false,
+  })
+); // Security headers
+
+// CORS configuration
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: isProduction ? [corsOrigin, /\.railway\.app$/] : corsOrigin,
     credentials: true,
   })
 );
@@ -46,6 +55,25 @@ app.get('/health', (req, res) => {
  * API routes
  */
 app.use('/api', routes);
+
+/**
+ * Serve static files in production
+ */
+if (isProduction) {
+  const publicPath = path.join(__dirname, '..', 'public');
+
+  // Serve static files
+  app.use(express.static(publicPath));
+
+  // SPA fallback - serve index.html for all non-API routes
+  app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api') || req.path === '/health') {
+      return next();
+    }
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
+}
 
 /**
  * Error handling

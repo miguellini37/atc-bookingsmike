@@ -1,0 +1,22 @@
+# Nixpacks configuration for Railway deployment
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm"]
+
+[phases.install]
+cmds = [
+  "npm install --include=dev",
+  "cd frontend && npm install",
+  "cd ../backend && npm install"
+]
+
+[phases.build]
+cmds = [
+  "cd backend && npm run db:generate",
+  "cd frontend && npm run build",
+  "cd ../backend && npm run build",
+  "node scripts/copy-frontend.js"
+]
+
+[start]
+cmd = "cd backend && npm run db:migrate:deploy && npm start"
