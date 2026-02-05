@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { format } from 'date-fns';
 import { MoreHorizontal, Pencil, Trash2, Radio, Calendar, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
