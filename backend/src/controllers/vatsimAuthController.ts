@@ -105,7 +105,7 @@ export const handleVatsimCallback = async (
       return;
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as { access_token: string };
     const accessToken = tokenData.access_token;
 
     // Fetch user info from VATSIM
@@ -121,7 +121,17 @@ export const handleVatsimCallback = async (
       return;
     }
 
-    const userData = await userResponse.json();
+    interface VatsimUserResponse {
+      data: {
+        cid: number;
+        personal: {
+          name_first: string;
+          name_last: string;
+        };
+      };
+    }
+
+    const userData = await userResponse.json() as VatsimUserResponse;
     const cid = userData.data.cid.toString();
     const name = `${userData.data.personal.name_first} ${userData.data.personal.name_last}`;
 

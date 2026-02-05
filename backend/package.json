@@ -15,12 +15,18 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
-  "keywords": ["vatsim", "atc", "booking", "typescript", "express"],
+  "keywords": [
+    "vatsim",
+    "atc",
+    "booking",
+    "typescript",
+    "express"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "bcrypt": "^5.1.1",
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -44,7 +50,7 @@
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4"
+    "vitest": "^4.0.18"
   },
   "engines": {
     "node": ">=20.0.0"
