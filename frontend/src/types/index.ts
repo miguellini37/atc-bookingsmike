@@ -7,7 +7,6 @@ export enum BookingType {
 
 export interface ApiKey {
   id: number;
-  cid: string;
   name: string;
   key: string;
   division: string;
@@ -52,7 +51,6 @@ export interface CreateBookingData {
 export interface UpdateBookingData extends Partial<CreateBookingData> {}
 
 export interface CreateApiKeyData {
-  cid: string;
   name: string;
   division: string;
   subdivision?: string;

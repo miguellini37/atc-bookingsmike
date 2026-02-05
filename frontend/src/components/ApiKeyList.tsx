@@ -68,10 +68,7 @@ function ApiKeyList({ apiKeys, onDelete, isDeleting }: ApiKeyListProps) {
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                Name
-              </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                CID
+                Organization
               </th>
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                 Division
@@ -102,9 +99,6 @@ function ApiKeyList({ apiKeys, onDelete, isDeleting }: ApiKeyListProps) {
                 >
                   <td className="p-4 align-middle">
                     <span className="font-medium">{apiKey.name}</span>
-                  </td>
-                  <td className="p-4 align-middle">
-                    <Badge variant="secondary">{apiKey.cid}</Badge>
                   </td>
                   <td className="p-4 align-middle">
                     <div className="flex items-center gap-1">
