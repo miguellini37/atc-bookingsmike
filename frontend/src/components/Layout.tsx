@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Plane, Calendar, Settings, Building2, Github } from 'lucide-react';
+import { Plane, Calendar, Settings, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LiveClock } from '@/components/LiveClock';
@@ -74,24 +74,24 @@ function Layout() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card py-6">
+      <footer className="border-t bg-card py-4">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Plane className="h-4 w-4" />
-              <span>VATSIM ATC Booking System</span>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Built with React + TypeScript + Express</span>
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-foreground transition-colors"
-              >
-                <Github className="h-4 w-4" />
-              </a>
-            </div>
+          <div className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-4">
+            <a
+              href="https://vatsim.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <img
+                src="https://vatsim.net/img/vatsim-logo.svg"
+                alt="VATSIM"
+                className="h-5 dark:invert"
+              />
+            </a>
+            <span className="text-sm text-muted-foreground">
+              Not affiliated with or endorsed by VATSIM
+            </span>
           </div>
         </div>
       </footer>
