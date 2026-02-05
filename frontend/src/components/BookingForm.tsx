@@ -59,7 +59,15 @@ function BookingForm({ onSubmit, isLoading, defaultValues, apiKeys, mode = 'crea
   const onFormSubmit = (data: CreateBookingData & { apiKeyId?: number }) => {
     // Remove apiKeyId from the data sent to API (it's used for auth header)
     const { apiKeyId, ...bookingData } = data;
-    onSubmit(bookingData, apiKeyId);
+
+    // Convert datetime-local format to ISO 8601 format
+    const formattedData = {
+      ...bookingData,
+      start: new Date(bookingData.start).toISOString(),
+      end: new Date(bookingData.end).toISOString(),
+    };
+
+    onSubmit(formattedData, apiKeyId);
   };
 
   return (
