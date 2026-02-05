@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Plane, Calendar, Settings, Building2 } from 'lucide-react';
+import { Plane, Calendar, Settings, Building2, FileCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LiveClock } from '@/components/LiveClock';
@@ -10,6 +10,7 @@ function Layout() {
   const navLinks = [
     { to: '/', label: 'Bookings', icon: <Calendar className="h-4 w-4" /> },
     { to: '/org/login', label: 'Organization', icon: <Building2 className="h-4 w-4" /> },
+    { to: '/api-docs', label: 'API', icon: <FileCode className="h-4 w-4" />, external: 'https://github.com/miguellini37/atc-bookingsmike/blob/main/API.md' },
     { to: '/admin', label: 'Admin', icon: <Settings className="h-4 w-4" /> },
   ];
 
@@ -37,6 +38,22 @@ function Layout() {
             <nav className="flex items-center gap-1">
               {navLinks.map((link) => {
                 const isActive = location.pathname === link.to;
+
+                if (link.external) {
+                  return (
+                    <a
+                      key={link.to}
+                      href={link.external}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+                    >
+                      {link.icon}
+                      <span className="hidden sm:inline">{link.label}</span>
+                    </a>
+                  );
+                }
+
                 return (
                   <Link
                     key={link.to}
