@@ -112,7 +112,7 @@ export const apiKeysApi = {
   },
 };
 
-// Organization Portal (for org managers)
+// Organization Portal (for org managers using Bearer token)
 export const orgApi = {
   getMyOrganization: async () => {
     const response = await api.get<ApiResponse<ApiKey>>('/org/me');
@@ -122,6 +122,97 @@ export const orgApi = {
   getMyBookings: async () => {
     const response = await api.get<ApiResponse<Booking[]>>('/org/bookings');
     return response.data.data || [];
+  },
+};
+
+// VATSIM OAuth session-based auth
+export interface OrgSession {
+  cid: string;
+  name: string;
+  currentOrg: ApiKey | null;
+  organizations: Array<{
+    id: number;
+    name: string;
+    division: string;
+    subdivision: string | null;
+    role: string;
+  }>;
+}
+
+export const vatsimAuthApi = {
+  // Redirect happens via window.location, not API call
+  getLoginUrl: () => '/api/oauth/vatsim',
+
+  getSession: async () => {
+    const response = await api.get<ApiResponse<OrgSession>>('/oauth/session');
+    return response.data.data!;
+  },
+
+  switchOrganization: async (orgId: number) => {
+    const response = await api.post<ApiResponse<{ switched: boolean }>>('/oauth/session/org', { orgId });
+    return response.data;
+  },
+
+  logout: async () => {
+    const response = await api.post<ApiResponse<{ loggedOut: boolean }>>('/oauth/logout');
+    return response.data;
+  },
+};
+
+// Session-based org portal (for VATSIM OAuth users)
+export const orgSessionApi = {
+  getMyOrganization: async () => {
+    const response = await api.get<ApiResponse<ApiKey>>('/org/session/me');
+    return response.data.data!;
+  },
+
+  getMyBookings: async () => {
+    const response = await api.get<ApiResponse<Booking[]>>('/org/session/bookings');
+    return response.data.data || [];
+  },
+};
+
+// Organization member management (admin only)
+export interface OrgMember {
+  id: number;
+  cid: string;
+  apiKeyId: number;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+  apiKey?: {
+    id: number;
+    name: string;
+    division: string;
+    subdivision: string | null;
+  };
+}
+
+export const orgMembersApi = {
+  getAll: async () => {
+    const response = await api.get<ApiResponse<OrgMember[]>>('/org-members/all');
+    return response.data.data || [];
+  },
+
+  getByOrg: async (orgId: number) => {
+    const response = await api.get<ApiResponse<OrgMember[]>>('/org-members', {
+      params: { orgId },
+    });
+    return response.data.data || [];
+  },
+
+  add: async (data: { cid: string; apiKeyId: number; role?: string }) => {
+    const response = await api.post<ApiResponse<OrgMember>>('/org-members', data);
+    return response.data.data!;
+  },
+
+  update: async (id: number, data: { role: string }) => {
+    const response = await api.put<ApiResponse<OrgMember>>(`/org-members/${id}`, data);
+    return response.data.data!;
+  },
+
+  remove: async (id: number) => {
+    await api.delete(`/org-members/${id}`);
   },
 };
 

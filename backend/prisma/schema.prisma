@@ -21,9 +21,41 @@ model ApiKey {
 
   // Relationships
   bookings    Booking[]
+  members     OrgMember[]
 
   @@map("api_keys")
   @@index([key])
+}
+
+// Organization members - links VATSIM users to organizations
+model OrgMember {
+  id          Int       @id @default(autoincrement())
+  cid         String    @db.VarChar(255)  // VATSIM CID
+  apiKeyId    Int       @map("api_key_id")
+  role        String    @default("member") @db.VarChar(50)  // member, manager, admin
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  apiKey      ApiKey    @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@unique([cid, apiKeyId])
+  @@map("org_members")
+  @@index([cid])
+  @@index([apiKeyId])
+}
+
+// User sessions for VATSIM OAuth
+model Session {
+  id          String    @id @default(uuid())
+  cid         String    @db.VarChar(255)
+  name        String    @db.VarChar(255)
+  apiKeyId    Int?      @map("api_key_id")  // Currently selected org
+  expiresAt   DateTime  @map("expires_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("sessions")
+  @@index([cid])
 }
 
 enum BookingType {

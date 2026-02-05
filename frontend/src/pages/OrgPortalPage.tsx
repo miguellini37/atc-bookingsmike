@@ -2,8 +2,8 @@ import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Plus, LogOut, Calendar, Building2, Clock } from 'lucide-react';
-import { orgApi, bookingsApi, setAuthToken, handleApiError } from '@/lib/api';
+import { Plus, LogOut, Calendar, Building2, Clock, ChevronDown } from 'lucide-react';
+import { vatsimAuthApi, orgSessionApi, bookingsApi, setAuthToken, handleApiError } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -14,6 +14,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import BookingForm from '@/components/BookingForm';
 import BookingList from '@/components/BookingList';
@@ -26,54 +32,63 @@ function OrgPortalPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Restore API key from session storage
-  React.useEffect(() => {
-    const storedKey = sessionStorage.getItem('orgApiKey');
-    if (storedKey) {
-      setAuthToken(storedKey);
-    } else {
-      navigate('/org/login');
-    }
-  }, [navigate]);
-
-  // Fetch organization info
+  // Fetch session info
   const {
-    data: organization,
-    isLoading: isLoadingOrg,
-    error: orgError,
+    data: session,
+    isLoading: isLoadingSession,
+    error: sessionError,
   } = useQuery({
-    queryKey: ['myOrganization'],
-    queryFn: orgApi.getMyOrganization,
+    queryKey: ['orgSession'],
+    queryFn: vatsimAuthApi.getSession,
     retry: false,
   });
 
-  // Fetch organization's bookings
+  // Set auth token when session loads (for booking operations)
+  React.useEffect(() => {
+    if (session?.currentOrg?.key) {
+      setAuthToken(session.currentOrg.key);
+    }
+  }, [session]);
+
+  // Fetch organization's bookings using session
   const {
     data: bookings = [],
     isLoading: isLoadingBookings,
   } = useQuery({
     queryKey: ['myBookings'],
-    queryFn: orgApi.getMyBookings,
+    queryFn: orgSessionApi.getMyBookings,
     retry: false,
-    enabled: !!organization,
+    enabled: !!session?.currentOrg,
   });
 
   // Redirect to login on auth error
   React.useEffect(() => {
-    if (orgError) {
-      sessionStorage.removeItem('orgApiKey');
-      setAuthToken(null);
-      toast.error('Session expired. Please log in again.');
+    if (sessionError) {
+      toast.error('Please log in to access the portal');
       navigate('/org/login');
     }
-  }, [orgError, navigate]);
+  }, [sessionError, navigate]);
+
+  // Switch organization mutation
+  const switchOrgMutation = useMutation({
+    mutationFn: vatsimAuthApi.switchOrganization,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orgSession'] });
+      queryClient.invalidateQueries({ queryKey: ['myBookings'] });
+      toast.success('Switched organization');
+    },
+    onError: (err) => {
+      toast.error('Failed to switch organization', {
+        description: handleApiError(err),
+      });
+    },
+  });
 
   // Create booking mutation
   const createMutation = useMutation({
     mutationFn: bookingsApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBookings'] });
-      queryClient.invalidateQueries({ queryKey: ['myOrganization'] });
       setShowCreateDialog(false);
       toast.success('Booking created successfully');
     },
@@ -105,7 +120,6 @@ function OrgPortalPage() {
     mutationFn: bookingsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myBookings'] });
-      queryClient.invalidateQueries({ queryKey: ['myOrganization'] });
       setDeleteTarget(null);
       toast.success('Booking deleted successfully');
     },
@@ -113,6 +127,17 @@ function OrgPortalPage() {
       toast.error('Failed to delete booking', {
         description: handleApiError(err),
       });
+    },
+  });
+
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: vatsimAuthApi.logout,
+    onSuccess: () => {
+      setAuthToken(null);
+      queryClient.clear();
+      toast.success('Logged out successfully');
+      navigate('/org/login');
     },
   });
 
@@ -141,10 +166,11 @@ function OrgPortalPage() {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('orgApiKey');
-    setAuthToken(null);
-    toast.success('Logged out successfully');
-    navigate('/org/login');
+    logoutMutation.mutate();
+  };
+
+  const handleSwitchOrg = (orgId: number) => {
+    switchOrgMutation.mutate(orgId);
   };
 
   // Calculate stats
@@ -154,9 +180,10 @@ function OrgPortalPage() {
   ).length;
   const upcomingBookings = bookings.filter((b) => new Date(b.start) > now).length;
 
-  const isLoading = isLoadingOrg || isLoadingBookings;
+  const isLoading = isLoadingSession || isLoadingBookings;
+  const organization = session?.currentOrg;
 
-  if (isLoading) {
+  if (isLoading || !session) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -186,10 +213,34 @@ function OrgPortalPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{organization?.name}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">{organization?.name}</h1>
+            {session.organizations.length > 1 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {session.organizations.map((org) => (
+                    <DropdownMenuItem
+                      key={org.id}
+                      onClick={() => handleSwitchOrg(org.id)}
+                      className={org.id === organization?.id ? 'bg-muted' : ''}
+                    >
+                      {org.name}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        ({org.role})
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
           <p className="text-muted-foreground">
-            {organization?.division}
-            {organization?.subdivision ? ` / ${organization.subdivision}` : ''} - Organization Portal
+            Welcome, {session.name} (CID: {session.cid})
           </p>
         </div>
 
@@ -241,7 +292,7 @@ function OrgPortalPage() {
           <div>
             <CardTitle>Your Bookings</CardTitle>
             <CardDescription>
-              Manage ATC position bookings for your organization.
+              Manage ATC position bookings for {organization?.name}.
             </CardDescription>
           </div>
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -261,7 +312,7 @@ function OrgPortalPage() {
               <BookingForm
                 onSubmit={handleCreate}
                 isLoading={createMutation.isPending}
-                apiKeys={[]} // Empty - org portal doesn't need org selection
+                apiKeys={[]}
                 mode="create"
                 defaultValues={{
                   division: organization?.division,

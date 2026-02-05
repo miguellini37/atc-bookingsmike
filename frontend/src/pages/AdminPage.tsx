@@ -1,12 +1,21 @@
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { Plus, LogOut, Key, Calendar, Shield, Building2 } from 'lucide-react';
-import { apiKeysApi, bookingsApi, authApi, handleApiError, setAuthToken } from '@/lib/api';
+import { Plus, LogOut, Key, Calendar, Shield, Building2, Users, Hash } from 'lucide-react';
+import { apiKeysApi, bookingsApi, authApi, orgMembersApi, handleApiError, setAuthToken, type OrgMember } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -20,18 +29,37 @@ import ApiKeyForm from '@/components/ApiKeyForm';
 import ApiKeyList from '@/components/ApiKeyList';
 import BookingForm from '@/components/BookingForm';
 import BookingList from '@/components/BookingList';
+import OrgMemberList from '@/components/OrgMemberList';
 import { ApiKeyTableSkeleton } from '@/components/skeletons/ApiKeyRowSkeleton';
 import type { CreateApiKeyData, ApiKey, CreateBookingData, Booking } from '@/types';
+
+interface AddMemberForm {
+  cid: string;
+  apiKeyId: string;
+  role: string;
+}
 
 function AdminPage() {
   const [activeTab, setActiveTab] = React.useState('bookings');
   const [showCreateKeyDialog, setShowCreateKeyDialog] = React.useState(false);
   const [showCreateBookingDialog, setShowCreateBookingDialog] = React.useState(false);
+  const [showAddMemberDialog, setShowAddMemberDialog] = React.useState(false);
   const [deleteKeyTarget, setDeleteKeyTarget] = React.useState<ApiKey | null>(null);
   const [deleteBookingTarget, setDeleteBookingTarget] = React.useState<Booking | null>(null);
   const [editBookingTarget, setEditBookingTarget] = React.useState<Booking | null>(null);
+  const [deleteMemberTarget, setDeleteMemberTarget] = React.useState<OrgMember | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<AddMemberForm>({
+    defaultValues: { role: 'manager' },
+  });
 
   // Fetch API keys
   const {
@@ -51,6 +79,16 @@ function AdminPage() {
   } = useQuery({
     queryKey: ['adminBookings'],
     queryFn: () => bookingsApi.getAll(),
+    retry: false,
+  });
+
+  // Fetch org members
+  const {
+    data: members = [],
+    isLoading: isLoadingMembers,
+  } = useQuery({
+    queryKey: ['orgMembers'],
+    queryFn: orgMembersApi.getAll,
     retry: false,
   });
 
@@ -84,6 +122,7 @@ function AdminPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
       queryClient.invalidateQueries({ queryKey: ['adminBookings'] });
+      queryClient.invalidateQueries({ queryKey: ['orgMembers'] });
       setDeleteKeyTarget(null);
       toast.success('API key deleted successfully');
     },
@@ -94,16 +133,45 @@ function AdminPage() {
     },
   });
 
+  // Member mutations
+  const addMemberMutation = useMutation({
+    mutationFn: orgMembersApi.add,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orgMembers'] });
+      setShowAddMemberDialog(false);
+      reset();
+      toast.success('Member added successfully');
+    },
+    onError: (err) => {
+      toast.error('Failed to add member', {
+        description: handleApiError(err),
+      });
+    },
+  });
+
+  const removeMemberMutation = useMutation({
+    mutationFn: orgMembersApi.remove,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orgMembers'] });
+      setDeleteMemberTarget(null);
+      toast.success('Member removed successfully');
+    },
+    onError: (err) => {
+      toast.error('Failed to remove member', {
+        description: handleApiError(err),
+      });
+    },
+  });
+
   // Booking mutations
   const createBookingMutation = useMutation({
     mutationFn: async ({ data, apiKeyId }: { data: CreateBookingData; apiKeyId: number }) => {
-      // Set the auth token for the selected API key
       const apiKey = apiKeys.find(k => k.id === apiKeyId);
       if (apiKey) {
         setAuthToken(apiKey.key);
       }
       const result = await bookingsApi.create(data);
-      setAuthToken(null); // Clear after use
+      setAuthToken(null);
       return result;
     },
     onSuccess: () => {
@@ -122,7 +190,6 @@ function AdminPage() {
 
   const updateBookingMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: CreateBookingData }) => {
-      // Find the API key that owns this booking
       const booking = bookings.find(b => b.id === id);
       const apiKey = apiKeys.find(k => k.id === booking?.apiKeyId);
       if (apiKey) {
@@ -147,7 +214,6 @@ function AdminPage() {
 
   const deleteBookingMutation = useMutation({
     mutationFn: async (booking: Booking) => {
-      // Find the API key that owns this booking
       const apiKey = apiKeys.find(k => k.id === booking.apiKeyId);
       if (apiKey) {
         setAuthToken(apiKey.key);
@@ -197,6 +263,24 @@ function AdminPage() {
     }
   };
 
+  const handleAddMember = (data: AddMemberForm) => {
+    addMemberMutation.mutate({
+      cid: data.cid,
+      apiKeyId: parseInt(data.apiKeyId),
+      role: data.role,
+    });
+  };
+
+  const handleRemoveMemberClick = (member: OrgMember) => {
+    setDeleteMemberTarget(member);
+  };
+
+  const handleRemoveMemberConfirm = () => {
+    if (deleteMemberTarget) {
+      removeMemberMutation.mutate(deleteMemberTarget.id);
+    }
+  };
+
   const handleCreateBooking = (data: CreateBookingData, apiKeyId?: number) => {
     if (apiKeyId) {
       createBookingMutation.mutate({ data, apiKeyId });
@@ -235,7 +319,7 @@ function AdminPage() {
     return new Date(b.start) <= now && new Date(b.end) >= now;
   }).length;
 
-  const isLoading = isLoadingKeys || isLoadingBookings;
+  const isLoading = isLoadingKeys || isLoadingBookings || isLoadingMembers;
 
   if (isLoading) {
     return (
@@ -292,12 +376,12 @@ function AdminPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Divisions</CardTitle>
-            <Key className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Managers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{uniqueDivisions}</div>
-            <p className="text-xs text-muted-foreground">Active divisions</p>
+            <div className="text-2xl font-bold">{members.length}</div>
+            <p className="text-xs text-muted-foreground">Authorized users</p>
           </CardContent>
         </Card>
 
@@ -315,14 +399,18 @@ function AdminPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="bookings" className="gap-2">
             <Calendar className="h-4 w-4" />
             Bookings
           </TabsTrigger>
           <TabsTrigger value="apikeys" className="gap-2">
             <Key className="h-4 w-4" />
-            API Keys
+            Organizations
+          </TabsTrigger>
+          <TabsTrigger value="members" className="gap-2">
+            <Users className="h-4 w-4" />
+            Managers
           </TabsTrigger>
         </TabsList>
 
@@ -333,7 +421,7 @@ function AdminPage() {
               <div>
                 <CardTitle>Bookings</CardTitle>
                 <CardDescription>
-                  Create and manage ATC position bookings for organizations that don't use the API.
+                  Create and manage ATC position bookings for organizations.
                 </CardDescription>
               </div>
               <Dialog open={showCreateBookingDialog} onOpenChange={setShowCreateBookingDialog}>
@@ -347,7 +435,7 @@ function AdminPage() {
                   <DialogHeader>
                     <DialogTitle>Create New Booking</DialogTitle>
                     <DialogDescription>
-                      Create a booking on behalf of an organization. Select the organization first.
+                      Create a booking on behalf of an organization.
                     </DialogDescription>
                   </DialogHeader>
                   <BookingForm
@@ -363,12 +451,12 @@ function AdminPage() {
               {apiKeys.length === 0 ? (
                 <div className="text-center py-12">
                   <Key className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="text-lg font-medium">No API keys yet</h3>
+                  <h3 className="text-lg font-medium">No organizations yet</h3>
                   <p className="text-muted-foreground mb-4">
-                    Create an API key for an organization first before creating bookings.
+                    Create an organization first before creating bookings.
                   </p>
                   <Button onClick={() => setActiveTab('apikeys')}>
-                    Go to API Keys
+                    Go to Organizations
                   </Button>
                 </div>
               ) : (
@@ -388,23 +476,23 @@ function AdminPage() {
           <Card>
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
               <div>
-                <CardTitle>API Keys</CardTitle>
+                <CardTitle>Organizations</CardTitle>
                 <CardDescription>
-                  Manage organization API keys. Each key allows an organization to create and manage bookings.
+                  Manage organization API keys. Each key allows an organization to manage their bookings.
                 </CardDescription>
               </div>
               <Dialog open={showCreateKeyDialog} onOpenChange={setShowCreateKeyDialog}>
                 <DialogTrigger asChild>
                   <Button className="gap-2">
                     <Plus className="h-4 w-4" />
-                    Create API Key
+                    Create Organization
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-lg">
                   <DialogHeader>
-                    <DialogTitle>Create New API Key</DialogTitle>
+                    <DialogTitle>Create New Organization</DialogTitle>
                     <DialogDescription>
-                      Generate a new API key for an organization (FIR/vARTCC). They will use this key to authenticate their booking requests.
+                      Generate an API key for an organization (FIR/vARTCC).
                     </DialogDescription>
                   </DialogHeader>
                   <ApiKeyForm onSubmit={handleCreateKey} isLoading={createKeyMutation.isPending} />
@@ -417,6 +505,118 @@ function AdminPage() {
                 onDelete={handleDeleteKeyClick}
                 isDeleting={deleteKeyMutation.isPending}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Members Tab */}
+        <TabsContent value="members" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+              <div>
+                <CardTitle>Organization Managers</CardTitle>
+                <CardDescription>
+                  Add VATSIM members who can manage bookings for their organization via the web portal.
+                </CardDescription>
+              </div>
+              <Dialog open={showAddMemberDialog} onOpenChange={(open) => {
+                setShowAddMemberDialog(open);
+                if (!open) reset();
+              }}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2" disabled={apiKeys.length === 0}>
+                    <Plus className="h-4 w-4" />
+                    Add Manager
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add Organization Manager</DialogTitle>
+                    <DialogDescription>
+                      Add a VATSIM member who can log in and manage bookings for an organization.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit(handleAddMember)} className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="cid" className="text-sm font-medium flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        VATSIM CID <span className="text-destructive">*</span>
+                      </label>
+                      <Input
+                        id="cid"
+                        {...register('cid', { required: 'CID is required' })}
+                        placeholder="e.g., 1234567"
+                        className={errors.cid ? 'border-destructive' : ''}
+                      />
+                      {errors.cid && (
+                        <p className="text-sm text-destructive">{errors.cid.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        Organization <span className="text-destructive">*</span>
+                      </label>
+                      <Select onValueChange={(v) => setValue('apiKeyId', v)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select organization..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {apiKeys.map((key) => (
+                            <SelectItem key={key.id} value={key.id.toString()}>
+                              {key.name} ({key.division}{key.subdivision ? `/${key.subdivision}` : ''})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-muted-foreground" />
+                        Role
+                      </label>
+                      <Select defaultValue="manager" onValueChange={(v) => setValue('role', v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="member">Member (view only)</SelectItem>
+                          <SelectItem value="manager">Manager (can create/edit/delete)</SelectItem>
+                          <SelectItem value="admin">Admin (full access)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                      <Button type="submit" disabled={addMemberMutation.isPending}>
+                        {addMemberMutation.isPending ? 'Adding...' : 'Add Manager'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {apiKeys.length === 0 ? (
+                <div className="text-center py-12">
+                  <Building2 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <h3 className="text-lg font-medium">No organizations yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create an organization first before adding managers.
+                  </p>
+                  <Button onClick={() => setActiveTab('apikeys')}>
+                    Go to Organizations
+                  </Button>
+                </div>
+              ) : (
+                <OrgMemberList
+                  members={members}
+                  onRemove={handleRemoveMemberClick}
+                  isRemoving={removeMemberMutation.isPending}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -455,8 +655,8 @@ function AdminPage() {
       <ConfirmDialog
         open={!!deleteKeyTarget}
         onOpenChange={(open) => !open && setDeleteKeyTarget(null)}
-        title="Delete API Key"
-        description={`Are you sure you want to delete the API key for "${deleteKeyTarget?.name}"? This action cannot be undone and will also delete all ${deleteKeyTarget?._count?.bookings || 0} associated bookings.`}
+        title="Delete Organization"
+        description={`Are you sure you want to delete "${deleteKeyTarget?.name}"? This will delete all ${deleteKeyTarget?._count?.bookings || 0} bookings and remove all managers.`}
         confirmLabel="Delete"
         variant="danger"
         onConfirm={handleDeleteKeyConfirm}
@@ -468,11 +668,23 @@ function AdminPage() {
         open={!!deleteBookingTarget}
         onOpenChange={(open) => !open && setDeleteBookingTarget(null)}
         title="Delete Booking"
-        description={`Are you sure you want to delete the booking for "${deleteBookingTarget?.callsign}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete the booking for "${deleteBookingTarget?.callsign}"?`}
         confirmLabel="Delete"
         variant="danger"
         onConfirm={handleDeleteBookingConfirm}
         loading={deleteBookingMutation.isPending}
+      />
+
+      {/* Remove Member Confirmation Dialog */}
+      <ConfirmDialog
+        open={!!deleteMemberTarget}
+        onOpenChange={(open) => !open && setDeleteMemberTarget(null)}
+        title="Remove Manager"
+        description={`Are you sure you want to remove CID ${deleteMemberTarget?.cid} from ${deleteMemberTarget?.apiKey?.name || 'this organization'}?`}
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={handleRemoveMemberConfirm}
+        loading={removeMemberMutation.isPending}
       />
     </div>
   );

@@ -1,53 +1,70 @@
 import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Key, Building2 } from 'lucide-react';
-import { setAuthToken, orgApi, handleApiError } from '@/lib/api';
+import { Building2, AlertCircle, Loader2 } from 'lucide-react';
+import { vatsimAuthApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface LoginForm {
-  apiKey: string;
-}
+// VATSIM logo SVG
+const VatsimLogo = () => (
+  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+  </svg>
+);
+
+const errorMessages: Record<string, string> = {
+  access_denied: 'You denied access to your VATSIM account.',
+  invalid_request: 'Invalid OAuth request. Please try again.',
+  invalid_state: 'Security validation failed. Please try again.',
+  token_exchange_failed: 'Failed to authenticate with VATSIM. Please try again.',
+  user_fetch_failed: 'Failed to get your VATSIM profile. Please try again.',
+  no_organization: 'You are not a member of any organization. Contact your division administrator.',
+  server_error: 'An unexpected error occurred. Please try again.',
+};
 
 function OrgLoginPage() {
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const navigate = useNavigate();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>();
+  const [searchParams] = useSearchParams();
+  const error = searchParams.get('error');
 
-  const onSubmit = async (data: LoginForm) => {
-    setIsLoading(true);
-    setError(null);
+  // Check if already logged in
+  const { data: session, isLoading } = useQuery({
+    queryKey: ['orgSession'],
+    queryFn: vatsimAuthApi.getSession,
+    retry: false,
+  });
 
-    try {
-      // Set the API key in the header
-      setAuthToken(data.apiKey);
-
-      // Try to fetch org info to verify the key is valid
-      const org = await orgApi.getMyOrganization();
-
-      // Store the API key in session storage for persistence
-      sessionStorage.setItem('orgApiKey', data.apiKey);
-
-      toast.success(`Welcome, ${org.name}!`);
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (session?.currentOrg) {
       navigate('/org');
-    } catch (err) {
-      setAuthToken(null);
-      sessionStorage.removeItem('orgApiKey');
-      const message = handleApiError(err);
-      setError(message === 'An error occurred' ? 'Invalid API key' : message);
-      toast.error('Login failed', { description: 'Invalid API key' });
-    } finally {
-      setIsLoading(false);
     }
+  }, [session, navigate]);
+
+  // Show error toast if there's an OAuth error
+  React.useEffect(() => {
+    if (error) {
+      toast.error('Login failed', {
+        description: errorMessages[error] || 'An unknown error occurred.',
+      });
+    }
+  }, [error]);
+
+  const handleVatsimLogin = () => {
+    // Redirect to VATSIM OAuth
+    window.location.href = vatsimAuthApi.getLoginUrl();
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
@@ -58,37 +75,33 @@ function OrgLoginPage() {
           </div>
           <CardTitle className="text-2xl">Organization Portal</CardTitle>
           <CardDescription>
-            Enter your organization's API key to manage your bookings
+            Sign in with your VATSIM account to manage your organization's bookings
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="apiKey" className="text-sm font-medium flex items-center gap-2">
-                <Key className="h-4 w-4 text-muted-foreground" />
-                API Key
-              </label>
-              <Input
-                id="apiKey"
-                type="password"
-                placeholder="Enter your API key"
-                {...register('apiKey', { required: 'API key is required' })}
-                className={errors.apiKey || error ? 'border-destructive' : ''}
-              />
-              {errors.apiKey && (
-                <p className="text-sm text-destructive">{errors.apiKey.message}</p>
-              )}
-              {error && <p className="text-sm text-destructive">{error}</p>}
-            </div>
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {errorMessages[error] || 'An unknown error occurred.'}
+              </AlertDescription>
+            </Alert>
+          )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
+          <Button
+            onClick={handleVatsimLogin}
+            className="w-full gap-2"
+            size="lg"
+          >
+            <VatsimLogo />
+            Sign in with VATSIM
+          </Button>
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Don't have an API key?</p>
-            <p>Contact your division administrator to get one.</p>
+          <div className="text-center text-sm text-muted-foreground space-y-2 pt-4">
+            <p>
+              You must be added as a member of an organization by your division administrator
+              before you can access the portal.
+            </p>
           </div>
         </CardContent>
       </Card>
