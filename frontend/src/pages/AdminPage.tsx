@@ -313,7 +313,6 @@ function AdminPage() {
 
   // Calculate stats
   const totalBookings = bookings.length;
-  const uniqueDivisions = new Set(apiKeys.map((k) => k.division)).size;
   const activeBookings = bookings.filter(b => {
     const now = new Date();
     return new Date(b.start) <= now && new Date(b.end) >= now;
