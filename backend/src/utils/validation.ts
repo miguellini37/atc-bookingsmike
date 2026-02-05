@@ -15,7 +15,7 @@ export const isValidCallsign = (callsign: string): boolean => {
  * Booking validation schema
  */
 export const createBookingSchema = z.object({
-  cid: z.string().min(1, 'CID is required'),
+  cid: z.string().min(1, 'CID is required').regex(/^\d{1,10}$/, 'CID must be a valid numeric VATSIM CID'),
   callsign: z
     .string()
     .min(1, 'Callsign is required')

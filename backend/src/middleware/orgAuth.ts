@@ -29,7 +29,7 @@ export const requireOrgSession = async (
       return;
     }
 
-    if (session.expiresAt < new Date()) {
+    if (session.expiresAt <= new Date()) {
       // Clean up expired session
       await prisma.session.delete({ where: { id: sessionId } }).catch(() => {});
       res.clearCookie('org_session');

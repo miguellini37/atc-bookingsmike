@@ -76,12 +76,12 @@ export const handleVatsimCallback = async (
     return;
   }
 
-  // Verify state token
-  if (!stateTokens.has(state as string)) {
+  // Verify state token with type checking
+  if (typeof state !== 'string' || !stateTokens.has(state)) {
     res.redirect(`${frontendUrl}/org/login?error=invalid_state`);
     return;
   }
-  stateTokens.delete(state as string);
+  stateTokens.delete(state);
 
   try {
     // Exchange code for access token

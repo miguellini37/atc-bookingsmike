@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import routes from './routes';
@@ -21,11 +22,51 @@ const isProduction = process.env.NODE_ENV === 'production';
 /**
  * Middleware setup
  */
+
+// Security headers with strict configuration
 app.use(
   helmet({
-    contentSecurityPolicy: isProduction ? undefined : false,
+    contentSecurityPolicy: isProduction
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+            connectSrc: ["'self'"],
+          },
+        }
+      : false,
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
   })
-); // Security headers
+);
+
+// Rate limiting - general API
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { success: false, message: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting - strict for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 auth attempts per windowMs
+  message: { success: false, message: 'Too many authentication attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiters
+app.use('/api', generalLimiter);
+app.use('/api/auth', authLimiter);
+app.use('/api/oauth', authLimiter);
 
 // CORS configuration
 const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
@@ -36,8 +77,8 @@ app.use(
   })
 );
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev')); // Logging
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(express.json({ limit: '10kb' })); // Parse JSON bodies with size limit
+app.use(express.urlencoded({ extended: true, limit: '10kb' })); // Parse URL-encoded bodies with size limit
 app.use(cookieParser()); // Parse cookies
 
 /**
@@ -96,7 +137,7 @@ const server = app.listen(PORT, async () => {
     console.log('✅ Database connected successfully');
   } catch (err) {
     console.error('❌ Database connection failed:', err);
-    console.error('DATABASE_URL format check:', process.env.DATABASE_URL?.substring(0, 30) + '...');
+    console.error('DATABASE_URL configured:', process.env.DATABASE_URL ? 'yes' : 'no');
   }
 });
 

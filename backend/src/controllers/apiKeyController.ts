@@ -1,6 +1,16 @@
 import { Response } from 'express';
-import { randomBytes } from 'crypto';
+import { randomBytes, timingSafeEqual } from 'crypto';
 import { AuthenticatedRequest } from '../types';
+
+/**
+ * Constant-time string comparison to prevent timing attacks
+ */
+function secureCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 import {
   sendSuccess,
   sendCreated,
@@ -40,8 +50,9 @@ export const authenticateSecretKey = async (
     }
 
     const { secretKey } = validationResult.data;
+    const envSecretKey = process.env.SECRET_KEY;
 
-    if (secretKey !== process.env.SECRET_KEY) {
+    if (!envSecretKey || !secureCompare(secretKey, envSecretKey)) {
       return sendBadRequest(res, 'Invalid secret key');
     }
 

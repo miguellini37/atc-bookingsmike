@@ -1,7 +1,18 @@
 import { Response, NextFunction } from 'express';
+import { timingSafeEqual } from 'crypto';
 import { AuthenticatedRequest } from '../types';
 import { sendUnauthorized } from '../utils/responses';
 import { prisma } from '../utils/database';
+
+/**
+ * Constant-time string comparison to prevent timing attacks
+ */
+function secureCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 /**
  * Middleware to verify Bearer token authentication (required)
@@ -88,7 +99,7 @@ export const requireSecretKey = (
   const cookieSecretKey = req.cookies?.secret_key;
   const envSecretKey = process.env.SECRET_KEY;
 
-  if (!cookieSecretKey || cookieSecretKey !== envSecretKey) {
+  if (!cookieSecretKey || !envSecretKey || !secureCompare(cookieSecretKey, envSecretKey)) {
     sendUnauthorized(res, 'Invalid or missing secret key');
     return;
   }
