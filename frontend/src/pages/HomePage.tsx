@@ -12,7 +12,7 @@ import {
   startOfMonth,
   endOfMonth,
 } from 'date-fns';
-import { RefreshCw, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, Calendar, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { bookingsApi } from '@/lib/api';
 import { useViewMode } from '@/contexts/ViewModeContext';
 import { getPositionType } from '@/lib/utils';
@@ -25,6 +25,7 @@ import { ListView } from '@/components/views/ListView';
 import { BookingCardGrid } from '@/components/BookingCard';
 import { BookingCardSkeletonGrid } from '@/components/skeletons/BookingCardSkeleton';
 import { TimelineSkeleton } from '@/components/skeletons/TimelineRowSkeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function HomePage() {
   const { viewMode } = useViewMode();
@@ -186,6 +187,14 @@ function HomePage() {
           </Button>
         </div>
       </div>
+
+      {/* Disclaimer */}
+      <Alert className="bg-blue-500/10 border-blue-500/20">
+        <Info className="h-4 w-4 text-blue-500" />
+        <AlertDescription className="text-sm text-muted-foreground">
+          While controllers are able to book positions on their local facility websites, this serves as no ultimate guarantee that the position will be open at the published time. Remember that this is a voluntary network and members are providing this service in their spare time.
+        </AlertDescription>
+      </Alert>
 
       {/* Quick Filters */}
       <QuickFilters filters={filters} onChange={setFilters} />
