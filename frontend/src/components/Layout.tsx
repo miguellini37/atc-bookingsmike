@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Plane, Calendar, Settings, Building2, FileCode } from 'lucide-react';
+import { Calendar, Settings, Building2, FileCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LiveClock } from '@/components/LiveClock';
@@ -25,12 +25,14 @@ function Layout() {
               to="/"
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20">
-                <Plane className="h-6 w-6 text-primary" />
-              </div>
+              <img
+                src="https://vatsim.net/img/vatsim-logo.svg"
+                alt="VATSIM"
+                className="h-8 invert"
+              />
               <div className="hidden sm:block">
                 <h1 className="text-lg font-bold tracking-tight">ATC Booking System</h1>
-                <p className="text-xs text-slate-400">VATSIM Position Management</p>
+                <p className="text-xs text-slate-400">Position Management</p>
               </div>
             </Link>
 
