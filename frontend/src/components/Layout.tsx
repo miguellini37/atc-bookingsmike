@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Plane, Calendar, Settings, Github } from 'lucide-react';
+import { Plane, Calendar, Settings, Building2, Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LiveClock } from '@/components/LiveClock';
@@ -9,6 +9,7 @@ function Layout() {
 
   const navLinks = [
     { to: '/', label: 'Bookings', icon: <Calendar className="h-4 w-4" /> },
+    { to: '/org/login', label: 'Organization', icon: <Building2 className="h-4 w-4" /> },
     { to: '/admin', label: 'Admin', icon: <Settings className="h-4 w-4" /> },
   ];
 

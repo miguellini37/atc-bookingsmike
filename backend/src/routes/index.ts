@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth, optionalAuth, requireSecretKey } from '../middleware/auth';
 import * as bookingController from '../controllers/bookingController';
 import * as apiKeyController from '../controllers/apiKeyController';
+import * as orgController from '../controllers/orgController';
 
 const router = Router();
 
@@ -20,6 +21,13 @@ router.post('/bookings', requireAuth, bookingController.createBooking);
 router.get('/bookings/:id', requireAuth, bookingController.getBookingById);
 router.put('/bookings/:id', requireAuth, bookingController.updateBooking);
 router.delete('/bookings/:id', requireAuth, bookingController.deleteBooking);
+
+/**
+ * Organization portal routes
+ * For org managers to manage their own bookings
+ */
+router.get('/org/me', requireAuth, orgController.getMyOrganization);
+router.get('/org/bookings', requireAuth, orgController.getMyBookings);
 
 /**
  * API Key management routes

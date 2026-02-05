@@ -112,4 +112,17 @@ export const apiKeysApi = {
   },
 };
 
+// Organization Portal (for org managers)
+export const orgApi = {
+  getMyOrganization: async () => {
+    const response = await api.get<ApiResponse<ApiKey>>('/org/me');
+    return response.data.data!;
+  },
+
+  getMyBookings: async () => {
+    const response = await api.get<ApiResponse<Booking[]>>('/org/bookings');
+    return response.data.data || [];
+  },
+};
+
 export default api;

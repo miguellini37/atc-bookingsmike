@@ -222,7 +222,7 @@ function BookingForm({ onSubmit, isLoading, defaultValues, apiKeys, mode = 'crea
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
-        <Button type="submit" disabled={isLoading || (mode === 'create' && !selectedApiKeyId)}>
+        <Button type="submit" disabled={isLoading || (mode === 'create' && apiKeys.length > 0 && !selectedApiKeyId)}>
           {isLoading ? (mode === 'edit' ? 'Saving...' : 'Creating...') : (mode === 'edit' ? 'Save Changes' : 'Create Booking')}
         </Button>
       </div>
