@@ -17,7 +17,7 @@ export interface FilterState {
   search: string;
   positionTypes: PositionType[];
   bookingTypes: BookingType[];
-  timeRange: 'all' | 'today' | 'week' | 'month';
+  timeRange: 'all' | 'today' | 'tomorrow' | 'week' | 'month';
   division: string;
   subdivision: string;
 }
@@ -48,7 +48,8 @@ const bookingTypeOptions: { value: BookingType; label: string }[] = [
 
 const timeRangeOptions = [
   { value: 'all', label: 'All Time' },
-  { value: 'today', label: 'Today' },
+  { value: 'today', label: 'Today (UTC)' },
+  { value: 'tomorrow', label: 'Tomorrow (UTC)' },
   { value: 'week', label: 'This Week' },
   { value: 'month', label: 'This Month' },
 ];

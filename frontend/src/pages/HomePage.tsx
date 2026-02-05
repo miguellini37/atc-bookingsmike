@@ -110,6 +110,10 @@ function HomePage() {
           rangeStart = startOfDay(now);
           rangeEnd = endOfDay(now);
           break;
+        case 'tomorrow':
+          rangeStart = startOfDay(addDays(now, 1));
+          rangeEnd = endOfDay(addDays(now, 1));
+          break;
         case 'week':
           rangeStart = startOfWeek(now);
           rangeEnd = endOfWeek(now);
