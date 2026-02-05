@@ -4,6 +4,29 @@ import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LiveClock } from '@/components/LiveClock';
 
+// VATSIM logo as inline SVG component
+function VatsimLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 120 24"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <text
+        x="0"
+        y="19"
+        fontFamily="Arial, sans-serif"
+        fontSize="20"
+        fontWeight="bold"
+        letterSpacing="1"
+      >
+        VATSIM
+      </text>
+    </svg>
+  );
+}
+
 function Layout() {
   const location = useLocation();
 
@@ -25,11 +48,7 @@ function Layout() {
               to="/"
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
-              <img
-                src="https://vatsim.net/img/vatsim-logo.svg"
-                alt="VATSIM"
-                className="h-8 invert"
-              />
+              <VatsimLogo className="h-6 w-auto text-white" />
               <div className="hidden sm:block">
                 <h1 className="text-lg font-bold tracking-tight">ATC Booking System</h1>
                 <p className="text-xs text-slate-400">Position Management</p>
@@ -86,11 +105,7 @@ function Layout() {
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <img
-                src="https://vatsim.net/img/vatsim-logo.svg"
-                alt="VATSIM"
-                className="h-5 dark:invert"
-              />
+              <VatsimLogo className="h-4 w-auto" />
             </a>
             <span className="text-sm text-muted-foreground">
               Not affiliated with or endorsed by VATSIM
