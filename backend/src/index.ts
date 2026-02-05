@@ -67,8 +67,8 @@ if (isProduction) {
 
   // SPA fallback - serve index.html for all non-API routes
   app.get('*', (req, res, next) => {
-    // Skip API routes
-    if (req.path.startsWith('/api') || req.path === '/health') {
+    // Skip actual API routes (must be /api/ not just /api prefix like /api-docs)
+    if (req.path.startsWith('/api/') || req.path === '/api' || req.path === '/health') {
       return next();
     }
     res.sendFile(path.join(publicPath, 'index.html'));
