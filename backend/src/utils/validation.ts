@@ -33,10 +33,10 @@ export const updateBookingSchema = createBookingSchema.partial();
 
 /**
  * API key validation schema
+ * API keys are issued to FIRs/vARTCCs/divisions, not individual controllers
  */
 export const createApiKeySchema = z.object({
-  cid: z.string().min(1, 'CID is required'),
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, 'Organization name is required'),
   division: z.string().min(1, 'Division is required'),
   subdivision: z.string().optional(),
 });

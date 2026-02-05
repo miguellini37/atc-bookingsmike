@@ -12,11 +12,10 @@ datasource db {
 
 model ApiKey {
   id          Int       @id @default(autoincrement())
-  cid         String    @db.VarChar(255)
-  name        String    @db.VarChar(255)
+  name        String    @db.VarChar(255)  // Organization name (FIR/vARTCC/Division)
   key         String    @unique @db.VarChar(255)
-  division    String    @db.VarChar(255)
-  subdivision String?   @db.VarChar(255)
+  division    String    @db.VarChar(255)  // Parent division (e.g., VATUSA, VATSIM)
+  subdivision String?   @db.VarChar(255)  // FIR/vARTCC code (e.g., ZLA, ZNY)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 

@@ -151,7 +151,6 @@ export const createApiKey = async (
 
     const apiKey = await prisma.apiKey.create({
       data: {
-        cid: data.cid,
         name: data.name,
         key,
         division: data.division,
@@ -200,7 +199,6 @@ export const updateApiKey = async (
     const apiKey = await prisma.apiKey.update({
       where: { id },
       data: {
-        ...(data.cid && { cid: data.cid }),
         ...(data.name && { name: data.name }),
         ...(data.division && { division: data.division }),
         ...(data.subdivision !== undefined && { subdivision: data.subdivision }),
