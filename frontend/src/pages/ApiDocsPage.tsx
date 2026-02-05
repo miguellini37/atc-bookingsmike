@@ -56,7 +56,7 @@ function ApiDocsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Authentication</CardTitle>
-          <CardDescription>The API supports three authentication levels</CardDescription>
+          <CardDescription>The API supports two authentication levels</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="overflow-x-auto">
@@ -74,15 +74,10 @@ function ApiDocsPage() {
                   <td className="py-2 pr-4 text-muted-foreground">None</td>
                   <td className="py-2">Read-only access to bookings</td>
                 </tr>
-                <tr className="border-b">
+                <tr>
                   <td className="py-2 pr-4 font-medium text-blue-600 dark:text-blue-400">Organization</td>
                   <td className="py-2 pr-4 text-muted-foreground">Bearer Token</td>
                   <td className="py-2">Full CRUD on own organization's bookings</td>
-                </tr>
-                <tr>
-                  <td className="py-2 pr-4 font-medium text-red-600 dark:text-red-400">Admin</td>
-                  <td className="py-2 pr-4 text-muted-foreground">Secret Key Cookie</td>
-                  <td className="py-2">Manage API keys and organization members</td>
                 </tr>
               </tbody>
             </table>
