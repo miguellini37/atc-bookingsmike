@@ -19,12 +19,14 @@ export interface FilterState {
   bookingTypes: BookingType[];
   timeRange: 'all' | 'today' | 'week' | 'month';
   division: string;
+  subdivision: string;
 }
 
 interface FilterBarProps {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
   divisions?: string[];
+  subdivisions?: string[];
 }
 
 const positionTypeOptions: { value: PositionType; label: string; color: string }[] = [
@@ -57,9 +59,10 @@ export const defaultFilters: FilterState = {
   bookingTypes: [],
   timeRange: 'all',
   division: '',
+  subdivision: '',
 };
 
-export function FilterBar({ filters, onChange, divisions = [] }: FilterBarProps) {
+export function FilterBar({ filters, onChange, divisions = [], subdivisions = [] }: FilterBarProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   const activeFilterCount =
@@ -67,7 +70,8 @@ export function FilterBar({ filters, onChange, divisions = [] }: FilterBarProps)
     filters.positionTypes.length +
     filters.bookingTypes.length +
     (filters.timeRange !== 'all' ? 1 : 0) +
-    (filters.division ? 1 : 0);
+    (filters.division ? 1 : 0) +
+    (filters.subdivision ? 1 : 0);
 
   const togglePositionType = (type: PositionType) => {
     const newTypes = filters.positionTypes.includes(type)
@@ -133,7 +137,7 @@ export function FilterBar({ filters, onChange, divisions = [] }: FilterBarProps)
         {divisions.length > 0 && (
           <Select
             value={filters.division}
-            onValueChange={(value) => onChange({ ...filters, division: value === 'all' ? '' : value })}
+            onValueChange={(value) => onChange({ ...filters, division: value === 'all' ? '' : value, subdivision: '' })}
           >
             <SelectTrigger className="w-[120px]">
               <SelectValue placeholder="Division" />
@@ -143,6 +147,26 @@ export function FilterBar({ filters, onChange, divisions = [] }: FilterBarProps)
               {divisions.map((division) => (
                 <SelectItem key={division} value={division}>
                   {division}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Subdivision select */}
+        {subdivisions.length > 0 && (
+          <Select
+            value={filters.subdivision}
+            onValueChange={(value) => onChange({ ...filters, subdivision: value === 'all' ? '' : value })}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Subdivision" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subdivisions</SelectItem>
+              {subdivisions.map((subdivision) => (
+                <SelectItem key={subdivision} value={subdivision}>
+                  {subdivision}
                 </SelectItem>
               ))}
             </SelectContent>

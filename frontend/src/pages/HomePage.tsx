@@ -50,6 +50,17 @@ function HomePage() {
     return Array.from(divisionSet).sort();
   }, [allBookings]);
 
+  // Extract unique subdivisions for selected division (or all if no division selected)
+  const subdivisions = React.useMemo(() => {
+    const filtered = filters.division
+      ? allBookings.filter((b) => b.division === filters.division)
+      : allBookings;
+    const subdivSet = new Set(
+      filtered.map((b) => b.subdivision).filter((s): s is string => !!s)
+    );
+    return Array.from(subdivSet).sort();
+  }, [allBookings, filters.division]);
+
   // Apply filters to bookings
   const filteredBookings = React.useMemo(() => {
     let result = [...allBookings];
@@ -81,6 +92,11 @@ function HomePage() {
     // Division filter
     if (filters.division) {
       result = result.filter((b) => b.division === filters.division);
+    }
+
+    // Subdivision filter
+    if (filters.subdivision) {
+      result = result.filter((b) => b.subdivision === filters.subdivision);
     }
 
     // Time range filter
@@ -200,7 +216,7 @@ function HomePage() {
       <QuickFilters filters={filters} onChange={setFilters} />
 
       {/* Filter Bar */}
-      <FilterBar filters={filters} onChange={setFilters} divisions={divisions} />
+      <FilterBar filters={filters} onChange={setFilters} divisions={divisions} subdivisions={subdivisions} />
 
       {/* Timeline Date Navigator (only for timeline view) */}
       {viewMode === 'timeline' && (
