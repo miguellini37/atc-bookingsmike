@@ -10,8 +10,14 @@ import { randomBytes } from 'crypto';
 const prisma = new PrismaClient();
 
 const OLD_API_URL = 'https://atc-bookings.vatsim.net/api/booking';
-const OLD_API_TOKEN = '15f74e722b26b4a67bf00c13fd28b971';
+const OLD_API_TOKEN = process.env.OLD_API_TOKEN;
 const PLACEHOLDER_CID = '0000000';
+
+if (!OLD_API_TOKEN) {
+  console.error('ERROR: OLD_API_TOKEN environment variable is required');
+  console.error('Usage: OLD_API_TOKEN=xxx npx tsx scripts/migrate.ts');
+  process.exit(1);
+}
 
 interface OldBooking {
   id: number;
