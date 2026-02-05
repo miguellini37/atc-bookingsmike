@@ -10,6 +10,7 @@ import AdminPage from './pages/AdminPage';
 import LoginPage from './pages/LoginPage';
 import OrgLoginPage from './pages/OrgLoginPage';
 import OrgPortalPage from './pages/OrgPortalPage';
+import ApiDocsPage from './pages/ApiDocsPage';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/org/login" element={<OrgLoginPage />} />
                   <Route path="/org" element={<OrgPortalPage />} />
+                  <Route path="/api-docs" element={<ApiDocsPage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Route>
               </Routes>
