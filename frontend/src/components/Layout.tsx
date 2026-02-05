@@ -92,9 +92,6 @@ function Layout() {
                 className="h-5 w-auto"
               />
             </a>
-            <span className="text-sm text-muted-foreground">
-              Not affiliated with or endorsed by VATSIM
-            </span>
           </div>
         </div>
       </footer>
