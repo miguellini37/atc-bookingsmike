@@ -17,7 +17,7 @@ import {
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import BookingForm from '@/components/BookingForm';
 import BookingList from '@/components/BookingList';
-import type { CreateBookingData, Booking, ApiKey } from '@/types';
+import type { CreateBookingData, Booking } from '@/types';
 
 function OrgPortalPage() {
   const [showCreateDialog, setShowCreateDialog] = React.useState(false);
@@ -180,21 +180,6 @@ function OrgPortalPage() {
       </div>
     );
   }
-
-  // Create a fake apiKeys array with just this org for the BookingForm
-  const orgAsApiKey: ApiKey[] = organization
-    ? [
-        {
-          id: organization.id,
-          name: organization.name,
-          key: '', // Not needed for display
-          division: organization.division,
-          subdivision: organization.subdivision,
-          createdAt: organization.createdAt,
-          updatedAt: '',
-        },
-      ]
-    : [];
 
   return (
     <div className="space-y-6">

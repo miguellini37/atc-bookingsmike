@@ -30,7 +30,6 @@ function AdminPage() {
   const [deleteKeyTarget, setDeleteKeyTarget] = React.useState<ApiKey | null>(null);
   const [deleteBookingTarget, setDeleteBookingTarget] = React.useState<Booking | null>(null);
   const [editBookingTarget, setEditBookingTarget] = React.useState<Booking | null>(null);
-  const [selectedApiKey, setSelectedApiKey] = React.useState<ApiKey | null>(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -111,7 +110,6 @@ function AdminPage() {
       queryClient.invalidateQueries({ queryKey: ['adminBookings'] });
       queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
       setShowCreateBookingDialog(false);
-      setSelectedApiKey(null);
       toast.success('Booking created successfully');
     },
     onError: (err) => {
@@ -338,10 +336,7 @@ function AdminPage() {
                   Create and manage ATC position bookings for organizations that don't use the API.
                 </CardDescription>
               </div>
-              <Dialog open={showCreateBookingDialog} onOpenChange={(open) => {
-                setShowCreateBookingDialog(open);
-                if (!open) setSelectedApiKey(null);
-              }}>
+              <Dialog open={showCreateBookingDialog} onOpenChange={setShowCreateBookingDialog}>
                 <DialogTrigger asChild>
                   <Button className="gap-2" disabled={apiKeys.length === 0}>
                     <Plus className="h-4 w-4" />
