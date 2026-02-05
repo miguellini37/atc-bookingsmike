@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Zap, Clock, CalendarDays, GraduationCap, Star } from 'lucide-react';
+import { Zap, Clock, Sunrise, CalendarDays, GraduationCap, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BookingType } from '@/types';
 import type { FilterState } from './FilterBar';
@@ -26,6 +26,13 @@ const quickFilters: QuickFilter[] = [
     icon: <Clock className="h-4 w-4" />,
     apply: () => ({ timeRange: 'today' as const }),
     isActive: (f) => f.timeRange === 'today',
+  },
+  {
+    id: 'tomorrow',
+    label: 'Tomorrow',
+    icon: <Sunrise className="h-4 w-4" />,
+    apply: () => ({ timeRange: 'tomorrow' as const }),
+    isActive: (f) => f.timeRange === 'tomorrow',
   },
   {
     id: 'week',
