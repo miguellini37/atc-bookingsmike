@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from '../types';
-import { sendUnauthorized } from '../utils/responses';
+import { sendUnauthorized, sendForbidden } from '../utils/responses';
 import { prisma } from '../utils/database';
 
 /**
@@ -67,11 +67,32 @@ export const requireOrgSession = async (
       return;
     }
 
-    // Attach API key to request (same as Bearer token auth)
+    // Attach API key and session info to request
     req.apiKey = apiKey;
+    req.orgSession = { cid: session.cid, role: membership.role };
     next();
   } catch (error) {
     console.error('Org session auth error:', error);
     sendUnauthorized(res, 'Authentication failed');
   }
+};
+
+/**
+ * Middleware to require specific org roles
+ * Must be used after requireOrgSession
+ */
+export const requireOrgRole = (...roles: string[]) => {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    if (!req.orgSession) {
+      sendUnauthorized(res, 'Session required');
+      return;
+    }
+
+    if (!roles.includes(req.orgSession.role)) {
+      sendForbidden(res, 'Insufficient permissions');
+      return;
+    }
+
+    next();
+  };
 };

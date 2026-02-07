@@ -55,6 +55,17 @@ export const sendUnauthorized = (res: Response, message = 'Unauthorized'): Respo
 };
 
 /**
+ * Send a forbidden response (403 Forbidden)
+ */
+export const sendForbidden = (res: Response, message = 'Forbidden'): Response => {
+  const response: ApiResponse = {
+    success: false,
+    message,
+  };
+  return res.status(403).json(response);
+};
+
+/**
  * Send a validation error response (422 Unprocessable Entity)
  */
 export const sendValidationError = (

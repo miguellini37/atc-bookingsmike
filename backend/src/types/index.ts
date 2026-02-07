@@ -6,6 +6,7 @@ import { ApiKey } from '@prisma/client';
  */
 export interface AuthenticatedRequest extends Request {
   apiKey?: ApiKey;
+  orgSession?: { cid: string; role: string };
 }
 
 /**
@@ -42,4 +43,5 @@ export interface EnvConfig {
   CORS_ORIGIN: string;
   LOG_LEVEL: string;
   SENTRY_DSN?: string;
+  VATSIM_API_KEY?: string;
 }

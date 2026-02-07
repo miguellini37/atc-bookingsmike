@@ -17,6 +17,7 @@ interface BookingFormProps {
   defaultValues?: Partial<CreateBookingData>;
   apiKeys: ApiKey[];
   mode?: 'create' | 'edit';
+  lockedCid?: string;
 }
 
 const bookingTypeOptions = [
@@ -26,7 +27,7 @@ const bookingTypeOptions = [
   { value: BookingType.TRAINING, label: 'Training' },
 ];
 
-function BookingForm({ onSubmit, isLoading, defaultValues, apiKeys, mode = 'create' }: BookingFormProps) {
+function BookingForm({ onSubmit, isLoading, defaultValues, apiKeys, mode = 'create', lockedCid }: BookingFormProps) {
   const {
     register,
     handleSubmit,
@@ -65,6 +66,7 @@ function BookingForm({ onSubmit, isLoading, defaultValues, apiKeys, mode = 'crea
       ...bookingData,
       start: new Date(bookingData.start).toISOString(),
       end: new Date(bookingData.end).toISOString(),
+      ...(lockedCid && { cid: lockedCid }),
     };
 
     onSubmit(formattedData, apiKeyId);
@@ -104,12 +106,21 @@ function BookingForm({ onSubmit, isLoading, defaultValues, apiKeys, mode = 'crea
             <Hash className="h-4 w-4 text-muted-foreground" />
             Controller CID <span className="text-destructive">*</span>
           </label>
-          <Input
-            id="cid"
-            {...register('cid', { required: 'CID is required' })}
-            placeholder="e.g., 1234567"
-            className={errors.cid ? 'border-destructive' : ''}
-          />
+          {lockedCid ? (
+            <Input
+              id="cid"
+              value={lockedCid}
+              disabled
+              className="bg-muted"
+            />
+          ) : (
+            <Input
+              id="cid"
+              {...register('cid', { required: 'CID is required' })}
+              placeholder="e.g., 1234567"
+              className={errors.cid ? 'border-destructive' : ''}
+            />
+          )}
           {errors.cid && (
             <p className="text-sm text-destructive">{errors.cid.message}</p>
           )}

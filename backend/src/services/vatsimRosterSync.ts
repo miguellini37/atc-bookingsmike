@@ -1,0 +1,92 @@
+import { prisma } from '../utils/database';
+
+const VATSIM_API_BASE = 'https://api.vatsim.net';
+
+interface VatsimMember {
+  id: number;
+  name_first: string;
+  name_last: string;
+  subdivision_id?: string;
+}
+
+interface VatsimRosterResponse {
+  items: VatsimMember[];
+  count: number;
+}
+
+/**
+ * Fetch all pages from a VATSIM roster endpoint
+ */
+async function fetchAllPages(url: string, apiKey: string): Promise<VatsimMember[]> {
+  const allMembers: VatsimMember[] = [];
+  let offset = 0;
+  const limit = 100;
+
+  while (true) {
+    const separator = url.includes('?') ? '&' : '?';
+    const pageUrl = `${url}${separator}limit=${limit}&offset=${offset}`;
+
+    const response = await fetch(pageUrl, {
+      headers: { 'X-API-Key': apiKey },
+    });
+
+    if (!response.ok) {
+      throw new Error(`VATSIM API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as VatsimRosterResponse;
+    allMembers.push(...data.items);
+
+    if (allMembers.length >= data.count || data.items.length < limit) {
+      break;
+    }
+
+    offset += limit;
+  }
+
+  return allMembers;
+}
+
+/**
+ * Sync roster from VATSIM Core API
+ * Fetches members from a division or subdivision and upserts them as 'member' role
+ */
+export async function syncRoster(
+  apiKeyId: number,
+  division: string,
+  subdivision: string | null,
+  vatsimApiKey: string
+): Promise<{ added: number; existing: number; total: number }> {
+  // Use subdivision endpoint if available, otherwise division
+  const endpoint = subdivision
+    ? `${VATSIM_API_BASE}/v2/orgs/subdivision/${subdivision}`
+    : `${VATSIM_API_BASE}/v2/orgs/division/${division}`;
+
+  const members = await fetchAllPages(endpoint, vatsimApiKey);
+
+  let added = 0;
+  let existing = 0;
+
+  for (const member of members) {
+    const cid = member.id.toString();
+
+    const existingMember = await prisma.orgMember.findUnique({
+      where: { cid_apiKeyId: { cid, apiKeyId } },
+    });
+
+    if (existingMember) {
+      existing++;
+    } else {
+      await prisma.orgMember.create({
+        data: {
+          cid,
+          apiKeyId,
+          role: 'member',
+        },
+      });
+      added++;
+    }
+  }
+
+  return { added, existing, total: members.length };
+}

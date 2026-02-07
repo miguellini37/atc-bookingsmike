@@ -170,6 +170,46 @@ export const orgSessionApi = {
     const response = await api.get<ApiResponse<Booking[]>>('/org/session/bookings');
     return response.data.data || [];
   },
+
+  // Session-based member management
+  getMembers: async () => {
+    const response = await api.get<ApiResponse<OrgMember[]>>('/org/session/members');
+    return response.data.data || [];
+  },
+
+  addMember: async (data: { cid: string; role?: string }) => {
+    const response = await api.post<ApiResponse<OrgMember>>('/org/session/members', data);
+    return response.data.data!;
+  },
+
+  updateMember: async (id: number, data: { role: string }) => {
+    const response = await api.put<ApiResponse<OrgMember>>(`/org/session/members/${id}`, data);
+    return response.data.data!;
+  },
+
+  removeMember: async (id: number) => {
+    await api.delete(`/org/session/members/${id}`);
+  },
+
+  syncRoster: async () => {
+    const response = await api.post<ApiResponse<{ added: number; existing: number; total: number }>>('/org/session/members/sync');
+    return response.data;
+  },
+
+  // Session-based booking CRUD
+  createBooking: async (data: CreateBookingData) => {
+    const response = await api.post<ApiResponse<Booking>>('/org/session/bookings', data);
+    return response.data.data!;
+  },
+
+  updateBooking: async (id: number, data: UpdateBookingData) => {
+    const response = await api.put<ApiResponse<Booking>>(`/org/session/bookings/${id}`, data);
+    return response.data.data!;
+  },
+
+  deleteBooking: async (id: number) => {
+    await api.delete(`/org/session/bookings/${id}`);
+  },
 };
 
 // Organization member management (admin only)

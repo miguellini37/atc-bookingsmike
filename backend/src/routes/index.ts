@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { requireAuth, optionalAuth, requireSecretKey } from '../middleware/auth';
-import { requireOrgSession } from '../middleware/orgAuth';
+import { requireOrgSession, requireOrgRole } from '../middleware/orgAuth';
 import * as bookingController from '../controllers/bookingController';
 import * as apiKeyController from '../controllers/apiKeyController';
 import * as orgController from '../controllers/orgController';
 import * as vatsimAuthController from '../controllers/vatsimAuthController';
 import * as orgMemberController from '../controllers/orgMemberController';
+import * as orgSessionMemberController from '../controllers/orgSessionMemberController';
+import * as orgSessionBookingController from '../controllers/orgSessionBookingController';
 
 const router = Router();
 
@@ -44,7 +46,23 @@ router.get('/org/bookings', requireAuth, orgController.getMyBookings);
  * Organization portal routes (Session auth - for VATSIM OAuth users)
  */
 router.get('/org/session/me', requireOrgSession, orgController.getMyOrganization);
-router.get('/org/session/bookings', requireOrgSession, orgController.getMyBookings);
+
+/**
+ * Session-based member management (admin/manager)
+ */
+router.post('/org/session/members/sync', requireOrgSession, requireOrgRole('admin'), orgSessionMemberController.syncFromVatsim);
+router.get('/org/session/members', requireOrgSession, requireOrgRole('admin', 'manager'), orgSessionMemberController.getMembers);
+router.post('/org/session/members', requireOrgSession, requireOrgRole('admin', 'manager'), orgSessionMemberController.addMember);
+router.put('/org/session/members/:id', requireOrgSession, requireOrgRole('admin'), orgSessionMemberController.updateMemberRole);
+router.delete('/org/session/members/:id', requireOrgSession, requireOrgRole('admin', 'manager'), orgSessionMemberController.removeMember);
+
+/**
+ * Session-based booking CRUD (role enforcement inside controller)
+ */
+router.get('/org/session/bookings', requireOrgSession, orgSessionBookingController.getBookings);
+router.post('/org/session/bookings', requireOrgSession, orgSessionBookingController.createBooking);
+router.put('/org/session/bookings/:id', requireOrgSession, orgSessionBookingController.updateBooking);
+router.delete('/org/session/bookings/:id', requireOrgSession, orgSessionBookingController.deleteBooking);
 
 /**
  * Organization member management routes (admin only)
