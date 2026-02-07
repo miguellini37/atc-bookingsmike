@@ -36,7 +36,11 @@ async function fetchAllPages(url: string, apiKey: string): Promise<VatsimMember[
     const pageUrl = `${url}${separator}limit=${limit}&offset=${offset}`;
 
     const response = await fetch(pageUrl, {
-      headers: { 'X-API-Key': apiKey },
+      headers: {
+        'X-API-Key': apiKey,
+        'User-Agent': 'ATC-BookingSystem/1.0',
+        'Accept': 'application/json',
+      },
     });
 
     if (!response.ok) {
