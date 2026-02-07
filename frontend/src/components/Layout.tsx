@@ -26,9 +26,9 @@ function Layout() {
               className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             >
               <img
-                src="/vatsim-logo.jpg"
+                src="/vatsim-logo.svg"
                 alt="VATSIM"
-                className="h-8 w-auto rounded"
+                className="h-8 w-auto"
               />
               <div className="hidden sm:block">
                 <h1 className="text-lg font-bold tracking-tight">ATC Booking System</h1>
@@ -87,9 +87,9 @@ function Layout() {
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <img
-                src="/vatsim-logo.jpg"
+                src="/vatsim-logo.svg"
                 alt="VATSIM"
-                className="h-5 w-auto rounded"
+                className="h-5 w-auto invert dark:invert-0"
               />
             </a>
           </div>
