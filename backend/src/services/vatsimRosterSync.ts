@@ -2,6 +2,15 @@ import { prisma } from '../utils/database';
 
 const VATSIM_API_BASE = 'https://api.vatsim.net';
 
+/**
+ * Map our subdivision codes to VATSIM's subdivision IDs
+ * (for cases where we renamed them in our database)
+ */
+const SUBDIVISION_CODE_MAP: Record<string, string> = {
+  CZE: 'CZCH',
+  LVA: 'LATVIA',
+};
+
 interface VatsimMember {
   id: number;
   name_first: string;
@@ -57,9 +66,14 @@ export async function syncRoster(
   subdivision: string | null,
   vatsimApiKey: string
 ): Promise<{ added: number; existing: number; total: number }> {
+  // Map our subdivision code to VATSIM's code if needed
+  const vatsimSubdivision = subdivision
+    ? SUBDIVISION_CODE_MAP[subdivision] || subdivision
+    : null;
+
   // Use subdivision endpoint if available, otherwise division
-  const endpoint = subdivision
-    ? `${VATSIM_API_BASE}/v2/orgs/subdivision/${subdivision}`
+  const endpoint = vatsimSubdivision
+    ? `${VATSIM_API_BASE}/v2/orgs/subdivision/${vatsimSubdivision}`
     : `${VATSIM_API_BASE}/v2/orgs/division/${division}`;
 
   const members = await fetchAllPages(endpoint, vatsimApiKey);

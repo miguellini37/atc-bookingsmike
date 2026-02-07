@@ -206,6 +206,7 @@ export const syncFromVatsim = async (
     return sendSuccess(res, result, `Roster synced: ${result.added} added, ${result.existing} existing, ${result.total} total`);
   } catch (error) {
     console.error('Error syncing VATSIM roster:', error);
-    throw error;
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return sendServerError(res, `Failed to sync roster: ${message}`);
   }
 };
