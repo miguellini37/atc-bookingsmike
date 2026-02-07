@@ -88,7 +88,17 @@ for (const line of sections.FIRs) {
   }
 }
 
-console.log(`Parsed ${Object.keys(firs).length} FIR entries`);
+// --- Manual FIR entries not in VATSpy data ---
+// Eurocontrol / Maastricht UAC overlays – map to EDGG boundary
+const manualFirs = {
+  EDYY: { icao: 'EDYY', name: 'Eurocontrol Maastricht UAC', boundaryId: 'EDGG' },
+  EDUU: { icao: 'EDUU', name: 'Maastricht UAC', boundaryId: 'EDGG' },
+};
+for (const [prefix, entry] of Object.entries(manualFirs)) {
+  if (!firs[prefix]) firs[prefix] = entry;
+}
+
+console.log(`Parsed ${Object.keys(firs).length} FIR entries (incl. manual)`);
 
 // --- Write outputs ---
 fs.writeFileSync(

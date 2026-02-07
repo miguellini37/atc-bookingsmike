@@ -105,6 +105,18 @@ export function resolveCallsign(
         }
       }
     }
+    // Fallback: some APP/DEP callsigns use FIR ICAO (e.g., ULLL_APP)
+    for (let i = prefixParts.length; i >= 1; i--) {
+      const prefix = prefixParts.slice(0, i).join('_').toUpperCase();
+      const fir = firs[prefix];
+      if (fir) {
+        return {
+          type: 'fir',
+          boundaryId: fir.boundaryId,
+          name: `${fir.name} (${fir.icao})`,
+        };
+      }
+    }
     return null;
   }
 
