@@ -40,7 +40,9 @@ async function fetchAllPages(url: string, apiKey: string): Promise<VatsimMember[
     });
 
     if (!response.ok) {
-      throw new Error(`VATSIM API error: ${response.status} ${response.statusText}`);
+      const body = await response.text().catch(() => '');
+      console.error(`VATSIM API error: ${response.status} ${response.statusText} URL: ${pageUrl} Body: ${body}`);
+      throw new Error(`VATSIM API error: ${response.status} ${response.statusText} - ${body}`);
     }
 
     const data = (await response.json()) as VatsimRosterResponse;
@@ -76,6 +78,7 @@ export async function syncRoster(
     ? `${VATSIM_API_BASE}/v2/orgs/subdivision/${vatsimSubdivision}`
     : `${VATSIM_API_BASE}/v2/orgs/division/${division}`;
 
+  console.log(`VATSIM roster sync: subdivision=${subdivision} → vatsimCode=${vatsimSubdivision} endpoint=${endpoint}`);
   const members = await fetchAllPages(endpoint, vatsimApiKey);
 
   let added = 0;
