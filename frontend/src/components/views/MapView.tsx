@@ -66,9 +66,7 @@ export function MapView({ bookings }: MapViewProps) {
 
       if (!resolved) {
         unmapped++;
-        if (process.env.NODE_ENV !== 'production') {
-          console.warn('[MapView] Unmapped callsign:', booking.callsign);
-        }
+        console.warn('[MapView] Unmapped callsign:', booking.callsign);
         continue;
       }
 
