@@ -25,6 +25,7 @@ import { ListView } from '@/components/views/ListView';
 import { BookingCardGrid } from '@/components/BookingCard';
 import { BookingCardSkeletonGrid } from '@/components/skeletons/BookingCardSkeleton';
 import { TimelineSkeleton } from '@/components/skeletons/TimelineRowSkeleton';
+import { MapView } from '@/components/views/MapView';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function HomePage() {
@@ -253,7 +254,9 @@ function HomePage() {
       )}
 
       {/* Content based on view mode */}
-      {isLoading ? (
+      {viewMode === 'map' ? (
+        <MapView bookings={isLoading ? [] : filteredBookings} />
+      ) : isLoading ? (
         viewMode === 'timeline' ? (
           <TimelineSkeleton />
         ) : (

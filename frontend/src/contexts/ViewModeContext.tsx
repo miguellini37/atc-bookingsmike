@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export type ViewMode = 'timeline' | 'cards' | 'list';
+export type ViewMode = 'timeline' | 'cards' | 'list' | 'map';
 
 interface ViewModeContextType {
   viewMode: ViewMode;

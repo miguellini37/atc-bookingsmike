@@ -1,4 +1,4 @@
-import { LayoutGrid, List, GanttChart } from 'lucide-react';
+import { LayoutGrid, List, GanttChart, MapPin } from 'lucide-react';
 import { useViewMode, type ViewMode } from '@/contexts/ViewModeContext';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -7,6 +7,7 @@ const viewModes: { value: ViewMode; icon: React.ReactNode; label: string }[] = [
   { value: 'timeline', icon: <GanttChart className="h-4 w-4" />, label: 'Timeline' },
   { value: 'cards', icon: <LayoutGrid className="h-4 w-4" />, label: 'Cards' },
   { value: 'list', icon: <List className="h-4 w-4" />, label: 'List' },
+  { value: 'map', icon: <MapPin className="h-4 w-4" />, label: 'Map' },
 ];
 
 export function ViewModeToggle() {
