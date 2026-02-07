@@ -76,32 +76,37 @@ export function resolveCallsign(
 ): ResolvedPosition | null {
   const parts = callsign.split('_');
   const suffix = parts[parts.length - 1]?.toUpperCase();
+  const prefixParts = parts.slice(0, -1);
 
   if (AIRPORT_SUFFIXES.has(suffix)) {
-    // Everything before the last underscore is the ICAO
-    const icao = parts.slice(0, -1).join('_').toUpperCase();
-    const airport = airports[icao];
-    if (airport) {
-      return {
-        type: 'airport',
-        lat: airport.lat,
-        lon: airport.lon,
-        name: `${airport.name} (${icao})`,
-      };
+    // Try progressively shorter prefixes: EGLL_N → EGLL
+    for (let i = prefixParts.length; i >= 1; i--) {
+      const icao = prefixParts.slice(0, i).join('_').toUpperCase();
+      const airport = airports[icao];
+      if (airport) {
+        return {
+          type: 'airport',
+          lat: airport.lat,
+          lon: airport.lon,
+          name: `${airport.name} (${icao})`,
+        };
+      }
     }
     return null;
   }
 
   if (FIR_SUFFIXES.has(suffix)) {
-    // The prefix before _CTR/_FSS is the callsign prefix
-    const prefix = parts.slice(0, -1).join('_').toUpperCase();
-    const fir = firs[prefix];
-    if (fir) {
-      return {
-        type: 'fir',
-        boundaryId: fir.boundaryId,
-        name: `${fir.name} (${fir.icao})`,
-      };
+    // Try exact prefix first (LON_S), then progressively shorter (LON)
+    for (let i = prefixParts.length; i >= 1; i--) {
+      const prefix = prefixParts.slice(0, i).join('_').toUpperCase();
+      const fir = firs[prefix];
+      if (fir) {
+        return {
+          type: 'fir',
+          boundaryId: fir.boundaryId,
+          name: `${fir.name} (${fir.icao})`,
+        };
+      }
     }
     return null;
   }

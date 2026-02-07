@@ -23,6 +23,9 @@ const isProduction = process.env.NODE_ENV === 'production';
  * Middleware setup
  */
 
+// Trust first proxy (Nginx/Railway) so rate limiter sees real client IPs
+app.set('trust proxy', 1);
+
 // Security headers with strict configuration
 app.use(
   helmet({
