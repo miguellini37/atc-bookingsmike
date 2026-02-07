@@ -91,6 +91,19 @@ export function resolveCallsign(
           name: `${airport.name} (${icao})`,
         };
       }
+      // US FAA 3-letter codes: try prepending K (BOS → KBOS)
+      if (icao.length === 3) {
+        const kIcao = 'K' + icao;
+        const kAirport = airports[kIcao];
+        if (kAirport) {
+          return {
+            type: 'airport',
+            lat: kAirport.lat,
+            lon: kAirport.lon,
+            name: `${kAirport.name} (${kIcao})`,
+          };
+        }
+      }
     }
     return null;
   }

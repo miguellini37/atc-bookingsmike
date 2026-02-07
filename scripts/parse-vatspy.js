@@ -71,15 +71,21 @@ for (const line of sections.FIRs) {
   if (parts.length < 4) continue;
   const [icao, name, callsignPrefix, boundaryId] = parts;
 
-  // The callsign prefix is what comes before _CTR/_FSS in a booking callsign
-  // e.g., EDM_CTR -> prefix "EDM" should map to CZEG FIR
-  const prefix = callsignPrefix || icao;
-
-  firs[prefix] = {
+  const entry = {
     icao,
     name,
     boundaryId: boundaryId || icao,
   };
+
+  // Index by callsign prefix (e.g., EDM -> CZEG)
+  const prefix = callsignPrefix || icao;
+  firs[prefix] = entry;
+
+  // Also index by FIR ICAO itself so CZVR_CTR resolves even if
+  // VATSpy only lists specific prefixes like VAN/ZVR for that FIR
+  if (callsignPrefix && !firs[icao]) {
+    firs[icao] = entry;
+  }
 }
 
 console.log(`Parsed ${Object.keys(firs).length} FIR entries`);
