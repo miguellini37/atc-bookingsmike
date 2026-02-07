@@ -45,8 +45,10 @@ async function fetchAllPages(url: string, apiKey: string): Promise<VatsimMember[
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
-      console.error(`VATSIM API error: ${response.status} ${response.statusText} URL: ${pageUrl} Body: ${body}`);
-      throw new Error(`VATSIM API error: ${response.status} ${response.statusText} - ${body}`);
+      const isHtml = body.startsWith('<!') || body.startsWith('<html');
+      const logBody = isHtml ? `[HTML response - likely Cloudflare/server error]` : body;
+      console.error(`VATSIM API error: ${response.status} ${response.statusText} URL: ${pageUrl} Body: ${logBody}`);
+      throw new Error(`VATSIM API error: ${response.status} ${response.statusText}`);
     }
 
     const data = (await response.json()) as VatsimRosterResponse;
@@ -64,7 +66,8 @@ async function fetchAllPages(url: string, apiKey: string): Promise<VatsimMember[
 
 /**
  * Sync roster from VATSIM Core API
- * Fetches members from a division or subdivision and upserts them as 'member' role
+ * Tries subdivision endpoint first, falls back to division endpoint
+ * with client-side filtering by subdivision_id.
  */
 export async function syncRoster(
   apiKeyId: number,
@@ -72,18 +75,31 @@ export async function syncRoster(
   subdivision: string | null,
   vatsimApiKey: string
 ): Promise<{ added: number; existing: number; total: number }> {
-  // Map our subdivision code to VATSIM's code if needed
   const vatsimSubdivision = subdivision
     ? SUBDIVISION_CODE_MAP[subdivision] || subdivision
     : null;
 
-  // Use subdivision endpoint if available, otherwise division
-  const endpoint = vatsimSubdivision
-    ? `${VATSIM_API_BASE}/v2/orgs/subdivision/${vatsimSubdivision}`
-    : `${VATSIM_API_BASE}/v2/orgs/division/${division}`;
+  let members: VatsimMember[];
 
-  console.log(`VATSIM roster sync: subdivision=${subdivision} → vatsimCode=${vatsimSubdivision} endpoint=${endpoint}`);
-  const members = await fetchAllPages(endpoint, vatsimApiKey);
+  // Try subdivision endpoint first, fall back to division
+  if (vatsimSubdivision) {
+    const subEndpoint = `${VATSIM_API_BASE}/v2/orgs/subdivision/${vatsimSubdivision}`;
+    console.log(`VATSIM roster sync: trying subdivision endpoint ${subEndpoint}`);
+    try {
+      members = await fetchAllPages(subEndpoint, vatsimApiKey);
+    } catch (subError) {
+      console.log(`Subdivision endpoint failed, falling back to division endpoint (${division}) with filter`);
+      const divEndpoint = `${VATSIM_API_BASE}/v2/orgs/division/${division}`;
+      const allDivMembers = await fetchAllPages(divEndpoint, vatsimApiKey);
+      // Filter to only members in this subdivision
+      members = allDivMembers.filter(m => m.subdivision_id === vatsimSubdivision);
+      console.log(`Filtered ${allDivMembers.length} division members → ${members.length} in subdivision ${vatsimSubdivision}`);
+    }
+  } else {
+    const divEndpoint = `${VATSIM_API_BASE}/v2/orgs/division/${division}`;
+    console.log(`VATSIM roster sync: using division endpoint ${divEndpoint}`);
+    members = await fetchAllPages(divEndpoint, vatsimApiKey);
+  }
 
   let added = 0;
   let existing = 0;
