@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  isPast,
   isFuture,
   isWithinInterval,
   startOfDay,
@@ -152,10 +151,7 @@ function HomePage() {
     .filter((b) => isFuture(new Date(b.start)))
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
-  const completedBookings = filteredBookings
-    .filter((b) => isPast(new Date(b.end)))
-    .sort((a, b) => new Date(b.end).getTime() - new Date(a.end).getTime())
-    .slice(0, 10);
+  const completedBookings: typeof filteredBookings = [];
 
   // Date navigation for timeline view
   const navigateDate = (direction: 'prev' | 'next') => {

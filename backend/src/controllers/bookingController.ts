@@ -60,6 +60,11 @@ export const getBookings = async (
       where.end = { lt: now };
     } else if (filters.order === 'future') {
       where.start = { gt: now };
+    } else {
+      // Default: hide completed/abandoned bookings.
+      // VATSIM policy: bookings not honoured within 15 min are void.
+      // Only return bookings that haven't ended yet.
+      where.end = { gte: now };
     }
 
     // Date range filtering
