@@ -46,14 +46,18 @@ export const getOrgMembers = async (
 };
 
 /**
- * Get all members across all organizations
+ * Get all managers/admins across all organizations
  * GET /api/org-members/all
+ * Excludes roster-synced "member" role entries to keep the list manageable
  */
 export const getAllMembers = async (
   _req: AuthenticatedRequest,
   res: Response
 ): Promise<Response> => {
   const members = await prisma.orgMember.findMany({
+    where: {
+      role: { in: ['manager', 'admin'] },
+    },
     include: {
       apiKey: {
         select: {
