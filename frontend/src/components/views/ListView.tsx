@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { format } from 'date-fns';
-import { cn, getPositionType, getPositionColor, formatTime } from '@/lib/utils';
+import { cn, getPositionType, getPositionColor, formatTime, getTimezoneAbbr } from '@/lib/utils';
+import { useTimezone } from '@/contexts/TimezoneContext';
 import { Badge } from '@/components/ui/badge';
 import { StatusIndicator } from '@/components/StatusIndicator';
 import type { Booking, BookingType } from '@/types';
@@ -23,6 +24,8 @@ const bookingTypeBadge: Record<BookingType, 'booking' | 'event' | 'exam' | 'trai
 export const ListView = React.memo(function ListView({ bookings, onBookingClick }: ListViewProps) {
   const [sortKey, setSortKey] = React.useState<SortKey>('start');
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('asc');
+  const { tzString } = useTimezone();
+  const tzSuffix = tzString === 'UTC' ? 'z' : ` ${getTimezoneAbbr(tzString)}`;
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -147,7 +150,7 @@ export const ListView = React.memo(function ListView({ bookings, onBookingClick 
                   <td className="p-4">
                     <div className="flex flex-col">
                       <span className="font-medium">
-                        {formatTime(booking.start)}z
+                        {formatTime(booking.start, tzString)}{tzSuffix}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(booking.start), 'dd MMM yyyy')}
@@ -157,7 +160,7 @@ export const ListView = React.memo(function ListView({ bookings, onBookingClick 
                   <td className="p-4">
                     <div className="flex flex-col">
                       <span className="font-medium">
-                        {formatTime(booking.end)}z
+                        {formatTime(booking.end, tzString)}{tzSuffix}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(booking.end), 'dd MMM yyyy')}
@@ -176,10 +179,10 @@ export const ListView = React.memo(function ListView({ bookings, onBookingClick 
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center gap-1">
+                    <div className="whitespace-nowrap">
                       <span className="font-medium">{booking.division}</span>
                       {booking.subdivision && (
-                        <span className="text-muted-foreground">/ {booking.subdivision}</span>
+                        <span className="text-muted-foreground"> / {booking.subdivision}</span>
                       )}
                     </div>
                   </td>

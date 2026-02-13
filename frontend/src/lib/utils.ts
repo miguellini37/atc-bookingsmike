@@ -114,33 +114,47 @@ export function getPositionName(type: PositionType): string {
 /**
  * Format time for display (24hr format)
  */
-export function formatTime(date: Date | string): string {
+export function formatTime(date: Date | string, timezone: string = 'UTC'): string {
   const d = new Date(date);
   return d.toLocaleTimeString('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'UTC',
+    timeZone: timezone,
   });
 }
 
 /**
  * Format date for display
  */
-export function formatDate(date: Date | string): string {
+export function formatDate(date: Date | string, timezone: string = 'UTC'): string {
   const d = new Date(date);
   return d.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-    timeZone: 'UTC',
+    timeZone: timezone,
   });
 }
 
 /**
  * Format date and time together
  */
-export function formatDateTime(date: Date | string): string {
-  return `${formatDate(date)} ${formatTime(date)}z`;
+export function formatDateTime(date: Date | string, timezone: string = 'UTC'): string {
+  return `${formatDate(date, timezone)} ${formatTime(date, timezone)}${timezone === 'UTC' ? 'z' : ''}`;
+}
+
+/**
+ * Get short timezone abbreviation for display (e.g. "UTC", "EST", "CET")
+ */
+export function getTimezoneAbbr(timezone: string): string {
+  if (timezone === 'UTC') return 'UTC';
+  const abbr = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    timeZoneName: 'short',
+  })
+    .formatToParts(new Date())
+    .find((p) => p.type === 'timeZoneName')?.value;
+  return abbr || timezone;
 }
 
 /**

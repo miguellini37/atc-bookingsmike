@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { Clock, Calendar, User, Radio } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn, getPositionType, getPositionColor, formatTime } from '@/lib/utils';
+import { cn, getPositionType, getPositionColor, formatTime, getTimezoneAbbr } from '@/lib/utils';
+import { useTimezone } from '@/contexts/TimezoneContext';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatusIndicator } from '@/components/StatusIndicator';
@@ -33,6 +34,8 @@ export const BookingCard = React.memo(function BookingCard({ booking, onClick }:
   const positionType = getPositionType(booking.callsign);
   const positionColors = getPositionColor(positionType);
   const status = getBookingStatus(booking);
+  const { tzString } = useTimezone();
+  const tzSuffix = tzString === 'UTC' ? 'z' : ` ${getTimezoneAbbr(tzString)}`;
 
   return (
     <Card
@@ -72,7 +75,7 @@ export const BookingCard = React.memo(function BookingCard({ booking, onClick }:
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium">
-              {formatTime(booking.start)} - {formatTime(booking.end)}z
+              {formatTime(booking.start, tzString)} - {formatTime(booking.end, tzString)}{tzSuffix}
             </span>
           </div>
 

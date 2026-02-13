@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { format, startOfDay, endOfDay, differenceInMinutes, isWithinInterval } from 'date-fns';
-import { cn, getPositionType, getPositionColor } from '@/lib/utils';
+import { cn, getPositionType, getPositionColor, formatTime, getTimezoneAbbr } from '@/lib/utils';
+import { useTimezone } from '@/contexts/TimezoneContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import type { Booking, BookingType } from '@/types';
@@ -56,6 +57,8 @@ const bookingTypeColors: Record<BookingType, string> = {
 
 export const TimelineView = React.memo(function TimelineView({ bookings, date = new Date() }: TimelineViewProps) {
   const [currentTime, setCurrentTime] = React.useState(new Date());
+  const { tzString } = useTimezone();
+  const tzSuffix = tzString === 'UTC' ? 'z' : ` ${getTimezoneAbbr(tzString)}`;
   const hourLabels = generateHourLabels();
   const dayStart = startOfDay(date);
   const dayEnd = endOfDay(date);
@@ -197,7 +200,7 @@ export const TimelineView = React.memo(function TimelineView({ bookings, date = 
                         <div className="space-y-1">
                           <div className="font-semibold">{booking.callsign}</div>
                           <div className="text-sm">
-                            {format(start, 'HH:mm')} - {format(end, 'HH:mm')}z
+                            {formatTime(start, tzString)} - {formatTime(end, tzString)}{tzSuffix}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {booking.apiKey?.name || booking.cid}
