@@ -84,6 +84,5 @@ model Booking {
   @@map("bookings")
   @@index([apiKeyId])
   @@index([start])
-  @@index([end])
-  @@index([callsign])
+  @@index([callsign, start, end])
 }

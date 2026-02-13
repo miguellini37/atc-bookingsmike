@@ -54,7 +54,7 @@ const bookingTypeColors: Record<BookingType, string> = {
   training: 'bg-purple-500',
 };
 
-export function TimelineView({ bookings, date = new Date() }: TimelineViewProps) {
+export const TimelineView = React.memo(function TimelineView({ bookings, date = new Date() }: TimelineViewProps) {
   const [currentTime, setCurrentTime] = React.useState(new Date());
   const hourLabels = generateHourLabels();
   const dayStart = startOfDay(date);
@@ -262,4 +262,4 @@ export function TimelineView({ bookings, date = new Date() }: TimelineViewProps)
       </div>
     </div>
   );
-}
+});

@@ -101,29 +101,32 @@ export async function syncRoster(
     members = await fetchAllPages(divEndpoint, vatsimApiKey);
   }
 
-  let added = 0;
-  let existing = 0;
+  // Batch: fetch all existing CIDs for this org in one query
+  const existingMembers = await prisma.orgMember.findMany({
+    where: { apiKeyId },
+    select: { cid: true },
+  });
+  const existingCids = new Set(existingMembers.map((m) => m.cid));
 
-  for (const member of members) {
-    const cid = member.id.toString();
+  // Find new members not yet in the database
+  const newMembers = members
+    .map((m) => m.id.toString())
+    .filter((cid) => !existingCids.has(cid));
 
-    const existingMember = await prisma.orgMember.findUnique({
-      where: { cid_apiKeyId: { cid, apiKeyId } },
+  // Bulk insert new members
+  if (newMembers.length > 0) {
+    await prisma.orgMember.createMany({
+      data: newMembers.map((cid) => ({
+        cid,
+        apiKeyId,
+        role: 'member',
+      })),
+      skipDuplicates: true,
     });
-
-    if (existingMember) {
-      existing++;
-    } else {
-      await prisma.orgMember.create({
-        data: {
-          cid,
-          apiKeyId,
-          role: 'member',
-        },
-      });
-      added++;
-    }
   }
+
+  const added = newMembers.length;
+  const existing = members.length - added;
 
   return { added, existing, total: members.length };
 }

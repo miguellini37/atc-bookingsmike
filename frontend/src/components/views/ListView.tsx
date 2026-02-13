@@ -20,7 +20,7 @@ const bookingTypeBadge: Record<BookingType, 'booking' | 'event' | 'exam' | 'trai
   training: 'training',
 };
 
-export function ListView({ bookings, onBookingClick }: ListViewProps) {
+export const ListView = React.memo(function ListView({ bookings, onBookingClick }: ListViewProps) {
   const [sortKey, setSortKey] = React.useState<SortKey>('start');
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('asc');
 
@@ -191,4 +191,4 @@ export function ListView({ bookings, onBookingClick }: ListViewProps) {
       </div>
     </div>
   );
-}
+});

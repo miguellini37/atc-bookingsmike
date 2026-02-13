@@ -24,7 +24,7 @@ import { ListView } from '@/components/views/ListView';
 import { BookingCardGrid } from '@/components/BookingCard';
 import { BookingCardSkeletonGrid } from '@/components/skeletons/BookingCardSkeleton';
 import { TimelineSkeleton } from '@/components/skeletons/TimelineRowSkeleton';
-import { MapView } from '@/components/views/MapView';
+const MapView = React.lazy(() => import('@/components/views/MapView').then(m => ({ default: m.MapView })));
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function HomePage() {
@@ -101,7 +101,13 @@ function HomePage() {
 
     // Time range filter
     const now = new Date();
-    if (filters.timeRange !== 'all') {
+    if (filters.timeRange === 'active') {
+      result = result.filter((b) => {
+        const start = new Date(b.start);
+        const end = new Date(b.end);
+        return now >= start && now <= end;
+      });
+    } else if (filters.timeRange !== 'all') {
       let rangeStart: Date;
       let rangeEnd: Date;
 
@@ -142,14 +148,18 @@ function HomePage() {
   }, [allBookings, filters]);
 
   // Categorize bookings for cards view
-  const now = new Date();
-  const activeBookings = filteredBookings.filter((b) =>
-    isWithinInterval(now, { start: new Date(b.start), end: new Date(b.end) })
-  );
+  const activeBookings = React.useMemo(() => {
+    const now = new Date();
+    return filteredBookings.filter((b) =>
+      isWithinInterval(now, { start: new Date(b.start), end: new Date(b.end) })
+    );
+  }, [filteredBookings]);
 
-  const upcomingBookings = filteredBookings
-    .filter((b) => isFuture(new Date(b.start)))
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  const upcomingBookings = React.useMemo(() => {
+    return filteredBookings
+      .filter((b) => isFuture(new Date(b.start)))
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+  }, [filteredBookings]);
 
   const completedBookings: typeof filteredBookings = [];
 
@@ -251,7 +261,9 @@ function HomePage() {
 
       {/* Content based on view mode */}
       {viewMode === 'map' ? (
-        <MapView bookings={isLoading ? [] : filteredBookings} />
+        <React.Suspense fallback={<div className="flex items-center justify-center h-96"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+          <MapView bookings={isLoading ? [] : filteredBookings} />
+        </React.Suspense>
       ) : isLoading ? (
         viewMode === 'timeline' ? (
           <TimelineSkeleton />

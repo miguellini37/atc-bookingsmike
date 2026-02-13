@@ -1,3 +1,4 @@
+import { lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ViewModeProvider } from '@/contexts/ViewModeContext';
@@ -5,12 +6,13 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
-import AdminPage from './pages/AdminPage';
-import LoginPage from './pages/LoginPage';
-import OrgLoginPage from './pages/OrgLoginPage';
-import OrgPortalPage from './pages/OrgPortalPage';
-import ApiDocsPage from './pages/ApiDocsPage';
+
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const OrgLoginPage = lazy(() => import('./pages/OrgLoginPage'));
+const OrgPortalPage = lazy(() => import('./pages/OrgPortalPage'));
+const ApiDocsPage = lazy(() => import('./pages/ApiDocsPage'));
 
 function App() {
   return (

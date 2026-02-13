@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { Clock, Calendar, User, Radio } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn, getPositionType, getPositionColor, formatTime } from '@/lib/utils';
@@ -28,7 +29,7 @@ function getBookingStatus(booking: Booking): 'active' | 'upcoming' | 'completed'
   return 'completed';
 }
 
-export function BookingCard({ booking, onClick }: BookingCardProps) {
+export const BookingCard = React.memo(function BookingCard({ booking, onClick }: BookingCardProps) {
   const positionType = getPositionType(booking.callsign);
   const positionColors = getPositionColor(positionType);
   const status = getBookingStatus(booking);
@@ -105,14 +106,14 @@ export function BookingCard({ booking, onClick }: BookingCardProps) {
       </div>
     </Card>
   );
-}
+});
 
 interface BookingCardGridProps {
   bookings: Booking[];
   onBookingClick?: (booking: Booking) => void;
 }
 
-export function BookingCardGrid({ bookings, onBookingClick }: BookingCardGridProps) {
+export const BookingCardGrid = React.memo(function BookingCardGrid({ bookings, onBookingClick }: BookingCardGridProps) {
   if (bookings.length === 0) {
     return (
       <div className="flex items-center justify-center rounded-md border border-dashed py-12 text-muted-foreground">
@@ -132,4 +133,4 @@ export function BookingCardGrid({ bookings, onBookingClick }: BookingCardGridPro
       ))}
     </div>
   );
-}
+});

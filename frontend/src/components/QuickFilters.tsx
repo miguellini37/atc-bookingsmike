@@ -17,8 +17,8 @@ const quickFilters: QuickFilter[] = [
     id: 'active',
     label: 'Active Now',
     icon: <Zap className="h-4 w-4" />,
-    apply: () => ({ timeRange: 'today' as const }),
-    isActive: (f) => f.timeRange === 'today',
+    apply: () => ({ timeRange: 'active' as const }),
+    isActive: (f) => f.timeRange === 'active',
   },
   {
     id: 'today',
@@ -66,11 +66,16 @@ interface QuickFiltersProps {
 export function QuickFilters({ filters, onChange, className }: QuickFiltersProps) {
   const handleClick = (filter: QuickFilter) => {
     if (filter.isActive(filters)) {
-      // Toggle off - reset to defaults
+      // Toggle off - only reset the properties this filter controls
+      const appliedKeys = Object.keys(filter.apply(filters));
+      const reset: Partial<FilterState> = {};
+      for (const key of appliedKeys) {
+        if (key === 'timeRange') reset.timeRange = 'all';
+        if (key === 'bookingTypes') reset.bookingTypes = [];
+      }
       onChange({
         ...filters,
-        timeRange: 'all',
-        bookingTypes: [],
+        ...reset,
       });
     } else {
       onChange({

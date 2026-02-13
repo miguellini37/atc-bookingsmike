@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Calendar, Settings, Building2, FileCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -72,7 +73,9 @@ function Layout() {
       {/* Main Content */}
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8">
-          <Outlet />
+          <Suspense fallback={<div className="flex items-center justify-center h-96"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" /></div>}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
 

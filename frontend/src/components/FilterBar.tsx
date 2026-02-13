@@ -17,7 +17,7 @@ export interface FilterState {
   search: string;
   positionTypes: PositionType[];
   bookingTypes: BookingType[];
-  timeRange: 'all' | 'today' | 'tomorrow' | 'week' | 'month';
+  timeRange: 'all' | 'active' | 'today' | 'tomorrow' | 'week' | 'month';
   division: string;
   subdivision: string;
 }
@@ -65,6 +65,25 @@ export const defaultFilters: FilterState = {
 
 export function FilterBar({ filters, onChange, divisions = [], subdivisions = [] }: FilterBarProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
+  const [localSearch, setLocalSearch] = React.useState(filters.search);
+  const debounceRef = React.useRef<ReturnType<typeof setTimeout>>();
+
+  // Sync local search when filters.search changes externally (e.g. clear all)
+  React.useEffect(() => {
+    setLocalSearch(filters.search);
+  }, [filters.search]);
+
+  const handleSearchChange = (value: string) => {
+    setLocalSearch(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onChange({ ...filters, search: value });
+    }, 300);
+  };
+
+  React.useEffect(() => {
+    return () => clearTimeout(debounceRef.current);
+  }, []);
 
   const activeFilterCount =
     (filters.search ? 1 : 0) +
@@ -101,13 +120,13 @@ export function FilterBar({ filters, onChange, divisions = [], subdivisions = []
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search callsign or controller..."
-            value={filters.search}
-            onChange={(e) => onChange({ ...filters, search: e.target.value })}
+            value={localSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="pl-9"
           />
-          {filters.search && (
+          {localSearch && (
             <button
-              onClick={() => onChange({ ...filters, search: '' })}
+              onClick={() => handleSearchChange('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
