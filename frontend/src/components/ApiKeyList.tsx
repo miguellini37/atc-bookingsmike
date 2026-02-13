@@ -77,6 +77,9 @@ function ApiKeyList({ apiKeys, onDelete, isDeleting }: ApiKeyListProps) {
                 API Key
               </th>
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                Portal
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                 Bookings
               </th>
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
@@ -138,6 +141,11 @@ function ApiKeyList({ apiKeys, onDelete, isDeleting }: ApiKeyListProps) {
                         )}
                       </Button>
                     </div>
+                  </td>
+                  <td className="p-4 align-middle">
+                    <Badge variant={apiKey.portalEnabled ? 'default' : 'secondary'}>
+                      {apiKey.portalEnabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
                   </td>
                   <td className="p-4 align-middle">
                     <Badge variant={apiKey._count?.bookings ? 'default' : 'secondary'}>

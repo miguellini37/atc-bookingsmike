@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { Building2, Globe, MapPin } from 'lucide-react';
+import { Building2, Globe, MapPin, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { CreateApiKeyData } from '@/types';
@@ -67,6 +67,24 @@ function ApiKeyForm({ onSubmit, isLoading, defaultValues }: ApiKeyFormProps) {
             {...register('subdivision')}
             placeholder="e.g., GBR (optional)"
           />
+        </div>
+
+        {/* Portal Access Toggle */}
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              {...register('portalEnabled')}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Enable Portal Access</span>
+            </div>
+          </label>
+          <p className="text-xs text-muted-foreground mt-1 ml-7">
+            Allow members to log in via VATSIM OAuth and manage bookings through the web portal.
+          </p>
         </div>
       </div>
 

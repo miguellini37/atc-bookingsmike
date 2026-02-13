@@ -375,12 +375,19 @@ function AdminPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Managers</CardTitle>
+            <CardTitle className="text-sm font-medium">Portal Members</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{members.length}</div>
-            <p className="text-xs text-muted-foreground">Authorized users</p>
+            <div className="text-2xl font-bold">
+              {members.filter(m => {
+                const org = apiKeys.find(k => k.id === m.apiKeyId);
+                return org?.portalEnabled;
+              }).length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {apiKeys.filter(k => k.portalEnabled).length} portal-enabled org{apiKeys.filter(k => k.portalEnabled).length !== 1 ? 's' : ''}
+            </p>
           </CardContent>
         </Card>
 

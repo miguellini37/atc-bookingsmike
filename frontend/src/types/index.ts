@@ -11,6 +11,7 @@ export interface ApiKey {
   key: string;
   division: string;
   subdivision: string | null;
+  portalEnabled: boolean;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -54,6 +55,7 @@ export interface CreateApiKeyData {
   name: string;
   division: string;
   subdivision?: string;
+  portalEnabled?: boolean;
 }
 
 export interface UpdateApiKeyData extends Partial<CreateApiKeyData> {}

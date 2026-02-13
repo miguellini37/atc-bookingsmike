@@ -166,6 +166,7 @@ export const createApiKey = async (
         key,
         division: data.division,
         subdivision: data.subdivision,
+        portalEnabled: data.portalEnabled ?? false,
       },
     });
 
@@ -213,6 +214,7 @@ export const updateApiKey = async (
         ...(data.name && { name: data.name }),
         ...(data.division && { division: data.division }),
         ...(data.subdivision !== undefined && { subdivision: data.subdivision }),
+        ...(data.portalEnabled !== undefined && { portalEnabled: data.portalEnabled }),
       },
     });
 

@@ -15,8 +15,9 @@ model ApiKey {
   name        String    @db.VarChar(255)  // Organization name (FIR/vARTCC/Division)
   key         String    @unique @db.VarChar(255)
   division    String    @db.VarChar(255)  // Parent division (e.g., VATUSA, VATSIM)
-  subdivision String?   @db.VarChar(255)  // FIR/vARTCC code (e.g., ZLA, ZNY)
-  createdAt   DateTime  @default(now()) @map("created_at")
+  subdivision   String?   @db.VarChar(255)  // FIR/vARTCC code (e.g., ZLA, ZNY)
+  portalEnabled Boolean   @default(false) @map("portal_enabled")
+  createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relationships

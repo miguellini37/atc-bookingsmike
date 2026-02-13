@@ -21,7 +21,7 @@ const errorMessages: Record<string, string> = {
   invalid_state: 'Security validation failed. Please try again.',
   token_exchange_failed: 'Failed to authenticate with VATSIM. Please try again.',
   user_fetch_failed: 'Failed to get your VATSIM profile. Please try again.',
-  no_organization: 'You are not a member of any organization. Contact your division administrator.',
+  no_organization: 'No portal-enabled organization found for your account. Portal access must be enabled by a system administrator.',
   server_error: 'An unexpected error occurred. Please try again.',
 };
 

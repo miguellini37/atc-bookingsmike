@@ -52,6 +52,11 @@ export const requireOrgSession = async (
       return;
     }
 
+    if (!apiKey.portalEnabled) {
+      sendForbidden(res, 'Portal access is not enabled for this organization');
+      return;
+    }
+
     // Verify user is still a member
     const membership = await prisma.orgMember.findUnique({
       where: {

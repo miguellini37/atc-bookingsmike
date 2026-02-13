@@ -135,9 +135,12 @@ export const handleVatsimCallback = async (
     const cid = userData.data.cid.toString();
     const name = `${userData.data.personal.name_first} ${userData.data.personal.name_last}`;
 
-    // Check if user is a member of any organization
+    // Check if user is a member of any portal-enabled organization
     const memberships = await prisma.orgMember.findMany({
-      where: { cid },
+      where: {
+        cid,
+        apiKey: { portalEnabled: true },
+      },
       include: {
         apiKey: {
           select: {
@@ -207,9 +210,12 @@ export const getSession = async (
     return sendUnauthorized(res, 'Session expired');
   }
 
-  // Get user's organizations
+  // Get user's organizations (only portal-enabled ones)
   const memberships = await prisma.orgMember.findMany({
-    where: { cid: session.cid },
+    where: {
+      cid: session.cid,
+      apiKey: { portalEnabled: true },
+    },
     include: {
       apiKey: {
         select: {
@@ -271,10 +277,15 @@ export const switchOrganization = async (
         apiKeyId: orgId,
       },
     },
+    include: { apiKey: { select: { portalEnabled: true } } },
   });
 
   if (!membership) {
     return sendBadRequest(res, 'You are not a member of this organization');
+  }
+
+  if (!membership.apiKey.portalEnabled) {
+    return sendBadRequest(res, 'Portal access is not enabled for this organization');
   }
 
   // Update session
